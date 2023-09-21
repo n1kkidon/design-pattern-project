@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using game_client.Socket;
 using shared;
@@ -13,15 +15,20 @@ public partial class MainWindow : Window
         _instance ??= new();
         return _instance;
     }
-    private MainWindow()
+    public MainWindow()
     {
         InitializeComponent();
+    }
+
+    private void OnJoinButtonClick(object sender, RoutedEventArgs e)
+    {
+        var name = nameField.Text;
+        if(name == null)
+            return;
+        canvas.Children.Remove(joinButton);
+        canvas.Children.Remove(nameField);
         SocketService socketService = new();
-        //var player = new PlayerPixel("Antanas", Color.FromRgb(255, 255, 0), 50, 50);
-        //PlayerPixel player1 = new("Zack", Color.FromRgb(15, 255, 200), Width, Height);
-        
-        //canvas.Children.Add(player.PlayerObject);
-        socketService.JoinGameLobby("forsen", Color.FromRgb(255, 255, 0)).Wait();
+        socketService.JoinGameLobby(name, Color.FromRgb(255, 255, 0)).Wait();
         KeyDown += async (sender, e) =>
         {
             switch (e.Key)

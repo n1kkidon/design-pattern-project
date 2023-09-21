@@ -16,12 +16,13 @@ public class SocketService
     public SocketService()
     {
         socket = new HubConnectionBuilder()
-        .WithUrl("http://localhost:5000/exampleChat")
+        .WithUrl("http://localhost:5000/exampleChat") //TODO: rename this, move it to settings
         .Build();
         socket.On("SendMessageToClient", (string message) => OnMessageReceived(message));     
         socket.On("AddPlayerToLobbyClient", (PlayerInfo p) => AddPlayerToLobbyClient(p));
         socket.On("UpdateClientPosition", (Direction d, string uuid) => UpdateClientPosition(d, uuid));
-        
+        socket.On("RemoveDisconnectedPlayer", (string uuid) => RemoveDisconnectedPlayer(uuid));
+
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
     }
@@ -48,6 +49,15 @@ public class SocketService
             MainWindow.GetInstance().canvas.Children.Add(playerpxl.PlayerObject);
             ConnectedPlayers.TryAdd(player.Uuid, playerpxl);
         });
+    }
+
+    private void RemoveDisconnectedPlayer(string uuid)
+    {
+        ConnectedPlayers.TryRemove(uuid, out var playerpxl);
+        if(playerpxl != null)
+            Dispatcher.UIThread.Invoke(() => {
+                MainWindow.GetInstance().canvas.Children.Remove(playerpxl.PlayerObject);
+            });
     }
 
     private void UpdateClientPosition(Direction direction, string uuid)

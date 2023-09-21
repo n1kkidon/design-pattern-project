@@ -9,7 +9,6 @@ public class ExampleChat : Hub
     private static readonly Random rnd = new();
     public async Task AddPlayerToLobby(string name, RGB color)
     {   
-        System.Console.WriteLine($"R:{color.R} G:{color.G} B:{color.B}");
         var info = new PlayerInfo{
             Color = color,
             Name = name,
@@ -41,7 +40,8 @@ public class ExampleChat : Hub
 
     public override Task OnDisconnectedAsync(Exception? exception)
     {
-        //TODO: send signal to remove the guy on disconnect
+        ConnectedUsers.TryRemove(Context.ConnectionId, out _);
+        Clients.Others.SendAsync("RemoveDisconnectedPlayer", Context.ConnectionId);
         Console.WriteLine($"Client from {Context.GetHttpContext()?.Connection.RemoteIpAddress} disconnected from gamer server chat socket.");
         return base.OnDisconnectedAsync(exception);
     }

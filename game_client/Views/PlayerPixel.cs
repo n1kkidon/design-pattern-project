@@ -13,7 +13,6 @@ public class PlayerPixel
     private double X, Y;
     private TextBlock NameTag;
     private Rectangle Pixel;
-    private readonly double MoveStep = 10;
 
     public PlayerPixel(string name, Color color, double x, double y){
         X = x;
@@ -39,16 +38,16 @@ public class PlayerPixel
     public void Move(Direction direction){
         switch(direction){
             case Direction.UP: 
-                Y -= MoveStep;
+                Y -= Constants.MoveStep;
                 break;
             case Direction.DOWN:
-                Y += MoveStep;
+                Y += Constants.MoveStep;
                 break;
             case Direction.LEFT:
-                X -= MoveStep;
+                X -= Constants.MoveStep;
                 break;
             case Direction.RIGHT:
-                X += MoveStep;
+                X += Constants.MoveStep;
                 break;
         }
         Canvas.SetLeft(PlayerObject, X);
