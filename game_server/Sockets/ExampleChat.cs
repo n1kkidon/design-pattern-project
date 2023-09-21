@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Drawing;
 using Microsoft.AspNetCore.SignalR;
 using shared;
 
@@ -25,8 +24,24 @@ public class ExampleChat : Hub
 
     public async Task ClientMoved(Direction direction)
     {
-        //TODO: save serverside location for when a new player joins, since we cant send already connected synced locations
         await Clients.All.SendAsync("UpdateClientPosition", direction, Context.ConnectionId);
+        //syncing location here for when a new player joins, 
+        //we know the correct coords of others to send it to him.
+        var playerInfo = ConnectedUsers[Context.ConnectionId];
+        switch(direction){
+            case Direction.UP: 
+                playerInfo.Y -= Constants.MoveStep;
+                break;
+            case Direction.DOWN:
+                playerInfo.Y += Constants.MoveStep;
+                break;
+            case Direction.LEFT:
+                playerInfo.X -= Constants.MoveStep;
+                break;
+            case Direction.RIGHT:
+                playerInfo.X += Constants.MoveStep;
+                break;
+        }
     }
 
 
