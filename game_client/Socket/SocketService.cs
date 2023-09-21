@@ -13,12 +13,11 @@ public class SocketService
 {
     private readonly ConcurrentDictionary<string, PlayerPixel> ConnectedPlayers = new();
     private HubConnection socket {get; set;}
-    public SocketService()
+    public SocketService(string url) //this could be turned into a singleton or DI or something idk
     {
         socket = new HubConnectionBuilder()
-        .WithUrl("http://localhost:5000/exampleChat") //TODO: rename this, move it to settings
-        .Build();
-        socket.On("SendMessageToClient", (string message) => OnMessageReceived(message));     
+        .WithUrl(url + "/playerHub")
+        .Build();   
         socket.On("AddPlayerToLobbyClient", (PlayerInfo p) => AddPlayerToLobbyClient(p));
         socket.On("UpdateClientPosition", (Direction d, string uuid) => UpdateClientPosition(d, uuid));
         socket.On("RemoveDisconnectedPlayer", (string uuid) => RemoveDisconnectedPlayer(uuid));
@@ -27,20 +26,15 @@ public class SocketService
         Console.WriteLine("connected to server.");
     }
 
-    private async Task OnMessageReceived(string message) //this does nothing now
+
+    public async Task OnCurrentPlayerMove(Direction direction)
     {
-        Console.WriteLine(message);
+        await socket.InvokeAsync("ClientMoved", direction);
     }
 
     public async Task JoinGameLobby(string name, Color color) //this goes through backend, which calls the AddPlayerToLobby() below
     {
        await socket.SendAsync("AddPlayerToLobby", name, new RGB(color.R, color.G, color.B));
-    }
-
-    //TODO: current movement assumes that there is no packet loss/desync, we are not actually sending precise location of clients. Might need to fix this in the future.
-    public async Task OnCurrentPlayerMove(Direction direction)
-    {
-        await socket.InvokeAsync("ClientMoved", direction);
     }
     private void AddPlayerToLobbyClient(PlayerInfo player)
     {

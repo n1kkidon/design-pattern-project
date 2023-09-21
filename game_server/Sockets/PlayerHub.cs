@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using shared;
 
-public class ExampleChat : Hub
+public class PlayerHub : Hub
 {
     private static readonly ConcurrentDictionary<string, PlayerInfo> ConnectedUsers = new();
     private static readonly Random rnd = new();

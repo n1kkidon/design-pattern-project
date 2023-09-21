@@ -1,4 +1,4 @@
-using Avalonia;
+using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -27,8 +27,12 @@ public partial class MainWindow : Window
             return;
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
-        SocketService socketService = new();
-        socketService.JoinGameLobby(name, Color.FromRgb(255, 255, 0)).Wait();
+
+        Random rnd = new();
+        SocketService socketService = new("http://localhost:5000"); //TODO: maybe make a config.json
+        socketService.JoinGameLobby(name, Color.FromRgb((byte)rnd.Next(255), 
+                                                        (byte)rnd.Next(255), 
+                                                        (byte)rnd.Next(255))).Wait();
         KeyDown += async (sender, e) =>
         {
             switch (e.Key)
