@@ -7,4 +7,8 @@
     <RootNamespace>game_server</RootNamespace>
   </PropertyGroup>
 
+
+  <ItemGroup>
+    <ProjectReference Include="..\shared\shared.csproj" />
+  </ItemGroup>
 </Project>
