@@ -13,6 +13,7 @@ namespace game_client.Socket;
 public class SocketService
 {
     private readonly ConcurrentDictionary<string, PlayerPixel> ConnectedPlayers = new();
+    private readonly ConcurrentDictionary<string, PlayerPixel> ConnectedOpponents = new();
     private HubConnection socket {get; set;}
     private SocketService()
     {
@@ -24,6 +25,7 @@ public class SocketService
         socket.On("AddPlayerToLobbyClient", (PlayerInfo p) => AddPlayerToLobbyClient(p));
         socket.On("UpdateClientPosition", (Direction d, string uuid) => UpdateClientPosition(d, uuid));
         socket.On("RemoveDisconnectedPlayer", (string uuid) => RemoveDisconnectedPlayer(uuid));
+        socket.On("AddOpponentToGameClient", (OpponentInfo o) => AddOpponentToGameClient(o));
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
@@ -44,6 +46,11 @@ public class SocketService
     {
        await socket.SendAsync("AddPlayerToLobby", name, new RGB(color.R, color.G, color.B));
     }
+    public async Task AddOpponentToGame()
+    {
+        await socket.SendAsync("AddOpponentToGame");
+    }
+
     private void AddPlayerToLobbyClient(PlayerInfo player)
     {
         Dispatcher.UIThread.Invoke(() => {
@@ -52,6 +59,7 @@ public class SocketService
             ConnectedPlayers.TryAdd(player.Uuid, playerpxl);
         });
     }
+
 
     private void RemoveDisconnectedPlayer(string uuid)
     {
@@ -69,5 +77,14 @@ public class SocketService
             playerpxl.Move(direction);
         });
     }
+    private void AddOpponentToGameClient(OpponentInfo opponent)
+    {
+        Dispatcher.UIThread.Invoke(() => {
+            var opponentPxl = new PlayerPixel(opponent.Name, Color.FromRgb(opponent.Color.R, opponent.Color.G, opponent.Color.B), opponent.X, opponent.Y);
+            MainWindow.GetInstance().canvas.Children.Add(opponentPxl.PlayerObject);
+            ConnectedOpponents.TryAdd(opponent.Uuid, opponentPxl);
+        });
+    }
+
 
 }

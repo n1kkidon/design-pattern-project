@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Drawing;
 using Microsoft.AspNetCore.SignalR;
 using shared;
 
@@ -6,6 +7,8 @@ public class PlayerHub : Hub
 {
     private static readonly ConcurrentDictionary<string, PlayerInfo> ConnectedUsers = new();
     private static readonly Random rnd = new();
+    private static readonly ConcurrentDictionary<string, OpponentInfo> ConnectedOpponents = new();
+
     public async Task AddPlayerToLobby(string name, RGB color)
     {   
         var info = new PlayerInfo{
@@ -21,6 +24,20 @@ public class PlayerHub : Hub
         foreach(var plr in existingplrs)
             await Clients.Caller.SendAsync("AddPlayerToLobbyClient", plr);
     }
+    public async Task AddOpponentToGame()
+    {
+        var opponentInfo = new OpponentInfo
+        {
+            Name = "Opponent1",
+            Color = new RGB(255, 0, 0),
+            Uuid = Context.ConnectionId,
+            X = 100,
+            Y = 100
+        };
+        ConnectedOpponents.TryAdd(opponentInfo.Uuid, opponentInfo);
+        await Clients.All.SendAsync("AddOpponentToGameClient", opponentInfo);
+    }
+
 
     public async Task ClientMoved(Direction direction)
     {

@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using game_client.Models;
 using game_client.Socket;
+using shared;
 
 namespace game_client.Views;
 
@@ -33,7 +34,7 @@ public partial class MainWindow : Window
         socketService.JoinGameLobby(name, Color.FromRgb((byte)rnd.Next(255), 
                                                         (byte)rnd.Next(255), 
                                                         (byte)rnd.Next(255))).Wait();
-
+        socketService.AddOpponentToGame().Wait();
 
         //keymaps
         InputHandler.SetCommand(Key.W, new MoveUpCommand());
