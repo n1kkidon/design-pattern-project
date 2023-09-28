@@ -5,17 +5,18 @@ using Avalonia.Input;
 
 namespace game_client;
 
-public class InputHandler
+public static class InputHandler
 {
-    private readonly Dictionary<Key, ICommand> keyMapping = new();
+    private static readonly Dictionary<Key, ICommand> keyMapping = new();
 
+    public static IEnumerable<Key> KeysWithRegistedCommands { get => keyMapping.Keys; }
 
-    public void SetCommand(Key key, ICommand command)
+    public static void SetCommand(Key key, ICommand command)
     {
         keyMapping[key] = command;
     }
 
-    public async Task HandleInput(Key key)
+    public static async Task HandleInput(Key key)
     {
         if (keyMapping.TryGetValue(key, out ICommand? value))
         {
@@ -23,5 +24,5 @@ public class InputHandler
         }
     }
 
-    public bool RemoveCommand(Key key) => keyMapping.Remove(key);
+    public static bool RemoveCommand(Key key) => keyMapping.Remove(key);
 }

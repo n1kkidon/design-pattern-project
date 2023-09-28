@@ -1,11 +1,10 @@
 using System;
-using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using game_client.Models;
 using game_client.Socket;
-using shared;
 
 namespace game_client.Views;
 
@@ -36,15 +35,15 @@ public partial class MainWindow : Window
                                                         (byte)rnd.Next(255))).Wait();
 
 
-        var inputHandler = new InputHandler();
-
         //keymaps
-        inputHandler.SetCommand(Key.W, new MoveUpCommand());
-        inputHandler.SetCommand(Key.A, new MoveLeftCommand());
-        inputHandler.SetCommand(Key.S, new MoveDownCommand());
-        inputHandler.SetCommand(Key.D, new MoveRightCommand());
+        InputHandler.SetCommand(Key.W, new MoveUpCommand());
+        InputHandler.SetCommand(Key.A, new MoveLeftCommand());
+        InputHandler.SetCommand(Key.S, new MoveDownCommand());
+        InputHandler.SetCommand(Key.D, new MoveRightCommand());
 
-        KeyDown += async (sender, e) => await inputHandler.HandleInput(e.Key);
+        var game = new Game(); //tickrate
+        game.Start();
+        //KeyDown += async (sender, e) => await InputHandler.HandleInput(e.Key);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

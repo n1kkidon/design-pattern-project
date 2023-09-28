@@ -8,7 +8,11 @@ public class Keyboard
 {
     public static readonly HashSet<Key> Keys = new();
 
-    //returns true while key is held down
+    /// <summary>
+    /// returns true while key is held down
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
     public static bool IsKeyPressed(Key key) => Keys.Contains(key);
 
 }
