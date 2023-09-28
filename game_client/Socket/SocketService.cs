@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
 using game_client.Models;
 using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
 using shared;
-
+using Tmds.DBus.Protocol;
 namespace game_client.Socket;
 
 public class SocketService
@@ -26,9 +27,14 @@ public class SocketService
         socket.On("UpdateClientPosition", (Direction d, string uuid) => UpdateClientPosition(d, uuid));
         socket.On("RemoveDisconnectedPlayer", (string uuid) => RemoveDisconnectedPlayer(uuid));
         socket.On("AddOpponentToGameClient", (OpponentInfo o) => AddOpponentToGameClient(o));
+        socket.On("AddCoinToMap", (Coin coin, string coinId) => AddCoinToGameClient(coin, coinId));
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
+    }
+    public string GetCurrentConnectionId()
+    {
+        return socket.ConnectionId ?? "";
     }
     private static SocketService? instance;
     public static SocketService GetInstance()
@@ -86,5 +92,20 @@ public class SocketService
         });
     }
 
+    private void AddCoinToGameClient(Coin coin, string coinId)
+    {
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            var coinView = new CoinView(coin.X, coin.Y);
+            MainWindow.GetInstance().canvas.Children.Add(coinView.CoinObject);
+            //coinViews[coinId] = coinView;  // Store the coinView with its ID
+        });
 
+    }
+
+
+    public void OnAddCoinToMap(Action<Coin, string> action)
+    {
+        socket.On<Coin, string>("AddCoinToMap", action);
+    }
 }

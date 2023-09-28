@@ -12,7 +12,8 @@ namespace game_client.Views;
 public partial class MainWindow : Window
 {
     private static MainWindow? _instance;
-    public static MainWindow GetInstance(){
+    public static MainWindow GetInstance()
+    {
         _instance ??= new();
         return _instance;
     }
@@ -24,16 +25,17 @@ public partial class MainWindow : Window
     private void OnJoinButtonClick(object sender, RoutedEventArgs e)
     {
         var name = nameField.Text;
-        if(name == null)
+        if (name == null)
             return;
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
 
         Random rnd = new();
         var socketService = SocketService.GetInstance();
-        socketService.JoinGameLobby(name, Color.FromRgb((byte)rnd.Next(255), 
-                                                        (byte)rnd.Next(255), 
+        socketService.JoinGameLobby(name, Color.FromRgb((byte)rnd.Next(255),
+                                                        (byte)rnd.Next(255),
                                                         (byte)rnd.Next(255))).Wait();
+
         socketService.AddOpponentToGame().Wait();
 
         //keymaps
