@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Drawing;
 using Microsoft.AspNetCore.SignalR;
 using shared;
+using Microsoft.Extensions.DependencyInjection;
 
 public class PlayerHub : Hub
 {
@@ -88,5 +89,17 @@ public class PlayerHub : Hub
             Console.WriteLine($"Error on connecting client: {ex.Message}");
         }
         return base.OnConnectedAsync();
+    }
+
+    private readonly CoinBackgroundService _coinService;
+
+    public PlayerHub(CoinBackgroundService coinService)
+    {
+        _coinService = coinService;
+    }
+    public async Task PickupCoin(string coinId)
+    {
+        Console.WriteLine("Picked up coinas");
+        await _coinService.PickupCoin(coinId);
     }
 }

@@ -15,6 +15,7 @@ public class SocketService
 {
     private readonly ConcurrentDictionary<string, PlayerPixel> ConnectedPlayers = new();
     private readonly ConcurrentDictionary<string, PlayerPixel> ConnectedOpponents = new();
+    private readonly ConcurrentDictionary<string, CoinView> coinViews = new();
     private HubConnection socket {get; set;}
     private SocketService()
     {
@@ -28,6 +29,7 @@ public class SocketService
         socket.On("RemoveDisconnectedPlayer", (string uuid) => RemoveDisconnectedPlayer(uuid));
         socket.On("AddOpponentToGameClient", (OpponentInfo o) => AddOpponentToGameClient(o));
         socket.On("AddCoinToMap", (Coin coin, string coinId) => AddCoinToGameClient(coin, coinId));
+        socket.On("CoinPickedUp", (string coinId) => RemoveCoinFromUI(coinId));
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
@@ -76,13 +78,16 @@ public class SocketService
             });
     }
 
-    private void UpdateClientPosition(Direction direction, string uuid)
+    private async void UpdateClientPosition(Direction direction, string uuid)
     {
-        Dispatcher.UIThread.Invoke(() => {
+        await Dispatcher.UIThread.InvokeAsync(async () =>
+        {
             var playerpxl = ConnectedPlayers[uuid];
             playerpxl.Move(direction);
+            await SocketService.GetInstance().CheckForCoinPickup(playerpxl);
         });
     }
+
     private void AddOpponentToGameClient(OpponentInfo opponent)
     {
         Dispatcher.UIThread.Invoke(() => {
@@ -98,14 +103,49 @@ public class SocketService
         {
             var coinView = new CoinView(coin.X, coin.Y);
             MainWindow.GetInstance().canvas.Children.Add(coinView.CoinObject);
-            //coinViews[coinId] = coinView;  // Store the coinView with its ID
+            coinViews[coinId] = coinView;  // Store the coinView with its ID
         });
-
     }
 
-
-    public void OnAddCoinToMap(Action<Coin, string> action)
+    public async Task CheckForCoinPickup(PlayerPixel currentPlayer)
     {
-        socket.On<Coin, string>("AddCoinToMap", action);
+        foreach (var coin in coinViews)
+        {
+            if (CheckCollision(currentPlayer, coin.Value))
+            {
+                await socket.InvokeAsync("PickupCoin", coin.Key);
+                RemoveCoinFromUI(coin.Key);
+                break;
+            }
+        }
+    }
+    private bool CheckCollision(PlayerPixel player, CoinView coin)
+    {
+        double sizePlayer = 15;
+        double sizeCoin = 15;
+        double extraPadding = 5;  // the extra area for detection
+
+        double halfSizePlayer = sizePlayer / 2.0 + extraPadding;
+        double halfSizeCoin = sizeCoin / 2.0 + extraPadding;
+
+        double playerCenterX = Canvas.GetLeft(player.PlayerObject) + sizePlayer / 2.0;
+        double playerCenterY = Canvas.GetTop(player.PlayerObject) + sizePlayer / 2.0;
+
+        double coinCenterX = Canvas.GetLeft(coin.CoinObject) + sizeCoin / 2.0;
+        double coinCenterY = Canvas.GetTop(coin.CoinObject) + sizeCoin / 2.0;
+
+        return Math.Abs(playerCenterX - coinCenterX) < (halfSizePlayer + halfSizeCoin) &&
+               Math.Abs(playerCenterY - coinCenterY) < (halfSizePlayer + halfSizeCoin);
+    }
+
+    private void RemoveCoinFromUI(string coinId)
+    {
+        if (coinViews.TryRemove(coinId, out var coin))
+        {
+            Dispatcher.UIThread.Invoke(() =>
+            {
+                MainWindow.GetInstance().canvas.Children.Remove(coin.CoinObject);
+            });
+        }
     }
 }

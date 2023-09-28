@@ -4,9 +4,10 @@ using shared;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddHostedService<CoinBackgroundService>();
+builder.Services.AddSingleton<CoinBackgroundService>();
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
-builder.Services.AddHostedService<CoinBackgroundService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
