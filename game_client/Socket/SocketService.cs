@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Threading;
+using game_client.Models;
 using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
 using shared;
@@ -13,8 +14,10 @@ public class SocketService
 {
     private readonly ConcurrentDictionary<string, PlayerPixel> ConnectedPlayers = new();
     private HubConnection socket {get; set;}
-    public SocketService(string url) //this could be turned into a singleton or DI or something idk
+    private SocketService()
     {
+        var url = Constants.ServerIP;
+        
         socket = new HubConnectionBuilder()
         .WithUrl(url + "/playerHub")
         .Build();   
@@ -25,7 +28,12 @@ public class SocketService
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
     }
-
+    private static SocketService? instance;
+    public static SocketService GetInstance()
+    {
+        instance ??= new();
+        return instance;
+    }
 
     public async Task OnCurrentPlayerMove(Direction direction)
     {

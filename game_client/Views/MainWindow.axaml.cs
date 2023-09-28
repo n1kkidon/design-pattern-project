@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -29,27 +30,32 @@ public partial class MainWindow : Window
         canvas.Children.Remove(nameField);
 
         Random rnd = new();
-        SocketService socketService = new("http://localhost:5000"); //TODO: maybe make a config.json
+        var socketService = SocketService.GetInstance();
         socketService.JoinGameLobby(name, Color.FromRgb((byte)rnd.Next(255), 
                                                         (byte)rnd.Next(255), 
                                                         (byte)rnd.Next(255))).Wait();
-        KeyDown += async (sender, e) =>
-        {
-            switch (e.Key)
-            {
-                case Key.W: // Move up
-                    await socketService.OnCurrentPlayerMove(Direction.UP);
-                    break;
-                case Key.S: // Move down
-                    await socketService.OnCurrentPlayerMove(Direction.DOWN);
-                    break;
-                case Key.A: // Move left
-                    await socketService.OnCurrentPlayerMove(Direction.LEFT);
-                    break;
-                case Key.D: // Move right
-                    await socketService.OnCurrentPlayerMove(Direction.RIGHT);
-                    break;
-            }
-        };
+
+
+        var inputHandler = new InputHandler();
+
+        //keymaps
+        inputHandler.SetCommand(Key.W, new MoveUpCommand());
+        inputHandler.SetCommand(Key.A, new MoveLeftCommand());
+        inputHandler.SetCommand(Key.S, new MoveDownCommand());
+        inputHandler.SetCommand(Key.D, new MoveRightCommand());
+
+        KeyDown += async (sender, e) => await inputHandler.HandleInput(e.Key);
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        Keyboard.Keys.Add(e.Key);
+        base.OnKeyUp(e);
+    }
+
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        Keyboard.Keys.Remove(e.Key);
+        base.OnKeyUp(e);
     }
 }

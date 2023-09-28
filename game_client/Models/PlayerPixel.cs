@@ -5,7 +5,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using shared;
 
-namespace game_client.Views;
+namespace game_client.Models;
 
 public class PlayerPixel
 {
