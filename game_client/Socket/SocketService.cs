@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
 using shared;
+using Tmds.DBus.Protocol;
 
 namespace game_client.Socket;
 
@@ -25,7 +26,10 @@ public class SocketService
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
     }
-
+    public string GetCurrentConnectionId()
+    {
+        return socket.ConnectionId ?? "";
+    }
 
     public async Task OnCurrentPlayerMove(Direction direction)
     {
@@ -62,4 +66,8 @@ public class SocketService
         });
     }
 
+    public void OnAddCoinToMap(Action<Coin, string> action)
+    {
+        socket.On<Coin, string>("AddCoinToMap", action);
+    }
 }

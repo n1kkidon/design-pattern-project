@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Drawing;
 using Microsoft.AspNetCore.SignalR;
 using shared;
 

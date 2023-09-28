@@ -1,11 +1,12 @@
 using game_server.Sockets;
+using shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
-
+builder.Services.AddHostedService<CoinBackgroundService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -24,5 +25,4 @@ app.UseForwardedHeaders();
 //app.UseAuthorization();
 app.RegisterSocketEndpoints();
 app.MapRazorPages();
-
 app.Run();

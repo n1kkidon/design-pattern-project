@@ -18,6 +18,7 @@
                         Canvas.Left="350"
                         Name="nameField"
                         />
+			
 
                 <Button Content="Join game"
                         Height="40"
