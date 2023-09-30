@@ -64,7 +64,6 @@ public class SocketService
         Dispatcher.UIThread.Invoke(() => {
             var playerpxl = new PlayerPixel(player.Name, Color.FromRgb(player.Color.R, player.Color.G, player.Color.B), player.Location);
             playerpxl.AddObjectToCanvas();
-            System.Console.WriteLine($"Width: {playerpxl.GetWidth()} Height: {playerpxl.GetHeight()}");
             ConnectedPlayers.TryAdd(player.Uuid, playerpxl);
         });
     }
@@ -93,7 +92,7 @@ public class SocketService
     {
         Dispatcher.UIThread.Invoke(() => {
             var opponentPxl = new PlayerPixel(opponent.Name, Color.FromRgb(opponent.Color.R, opponent.Color.G, opponent.Color.B), opponent.Location);
-            opponentPxl.RemoveObjectFromCanvas();
+            opponentPxl.AddObjectToCanvas();
             ConnectedOpponents.TryAdd(opponent.Uuid, opponentPxl);
         });
     }
@@ -123,8 +122,8 @@ public class SocketService
     private bool CheckCollision(PlayerPixel player, CoinView coin)
     {
         double sizePlayer = 15;
-        double sizeCoin = 15;
-        double extraPadding = 5;  // the extra area for detection
+        double sizeCoin = 10;
+        double extraPadding = 1;  // the extra area for detection
 
         double halfSizePlayer = sizePlayer / 2.0 + extraPadding;
         double halfSizeCoin = sizeCoin / 2.0 + extraPadding;
@@ -133,8 +132,7 @@ public class SocketService
         double playerCenterY = player.Location.Y;
 
         double coinCenterX = Canvas.GetLeft(coin.CoinObject) + sizeCoin / 2.0;
-        double coinCenterY = Canvas.GetTop(coin.CoinObject) + sizeCoin / 2.0;
-
+        double coinCenterY = Canvas.GetBottom(coin.CoinObject) + sizeCoin / 2.0;
         return Math.Abs(playerCenterX - coinCenterX) < (halfSizePlayer + halfSizeCoin) &&
                Math.Abs(playerCenterY - coinCenterY) < (halfSizePlayer + halfSizeCoin);
     }

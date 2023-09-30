@@ -26,7 +26,7 @@ namespace game_client.Views
             };
             CoinObject.Children.Add(CoinShape);
             Canvas.SetLeft(CoinObject, x);
-            Canvas.SetTop(CoinObject, y);
+            Canvas.SetBottom(CoinObject, y);
         }
     }
 }

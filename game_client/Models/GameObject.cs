@@ -10,21 +10,21 @@ public class GameObject
     private Vector2 _location;
     public Vector2 Location { 
         get { 
-            _location.Y = (float)Canvas.GetTop(stackPanel)-GetHeight()/2;
-            _location.X = (float)Canvas.GetRight(stackPanel)-GetWidth()/2;
+            _location.Y = (float)Canvas.GetBottom(stackPanel) + GetHeight()/2;
+            _location.X = (float)Canvas.GetLeft(stackPanel) + GetWidth()/2;
             return _location;
         }
         protected set {  
-            Canvas.SetTop(stackPanel, value.Y + GetHeight()/2);
-            Canvas.SetRight(stackPanel, value.X + GetWidth()/2);
+            Canvas.SetBottom(stackPanel, value.Y - GetHeight()/2);
+            Canvas.SetLeft(stackPanel, value.X - GetWidth()/2);
         }
     }
     protected StackPanel stackPanel {get; set;}
 
     protected GameObject(Vector2 location)
     {
-        _location = location;
         stackPanel = new();
+        Location = location;
     }
 
     public float GetHeight()
@@ -67,8 +67,8 @@ public class GameObject
         var magn = (float)Math.Sqrt(x*x + y*y);
         if(magn == 0)
             return;
-        var newX = Location.X - x * Constants.MoveStep / magn; //inverted canvas i think, thats why '-'
-        var newY = Location.Y - y * Constants.MoveStep / magn;
-        Location = new(newX, newY); 
+        var newX = Location.X + x * Constants.MoveStep / magn; //inverted canvas i think, thats why '-'
+        var newY = Location.Y + y * Constants.MoveStep / magn;
+        Location = new(newX, newY);
     }
 }
