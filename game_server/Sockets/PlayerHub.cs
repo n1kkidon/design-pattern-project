@@ -1,84 +1,74 @@
 using System.Collections.Concurrent;
-using System.Drawing;
+using game_server.Services;
 using Microsoft.AspNetCore.SignalR;
 using shared;
-using Microsoft.Extensions.DependencyInjection;
 
+namespace game_server.Sockets;
 public class PlayerHub : Hub
 {
-    private static readonly ConcurrentDictionary<string, PlayerInfo> ConnectedUsers = new();
+    public static readonly ConcurrentDictionary<string, CanvasObjectInfo> CurrentCanvasItems = new();
     private static readonly Random rnd = new();
-    private static readonly ConcurrentDictionary<string, OpponentInfo> ConnectedOpponents = new();
+    private readonly CoinBackgroundService _coinService;
 
-    public async Task AddPlayerToLobby(string name, RGB color)
+    public PlayerHub(CoinBackgroundService coinService)
+    {
+        _coinService = coinService;
+    }
+
+    public async Task AddEntityToLobby(string name, RGB color, EntityType entityType)
     {   
-        var info = new PlayerInfo{
+        var info = new CanvasObjectInfo{
+            EntityType = entityType,
             Color = color,
             Name = name,
-            Uuid = Context.ConnectionId,
-            X = rnd.Next((int)(Constants.MapWidth*0.9)),
-            Y = rnd.Next((int)(Constants.MapHeight*0.9))
+            Uuid = entityType == EntityType.PLAYER ? Context.ConnectionId : Guid.NewGuid().ToString(),
+            Location = new(rnd.Next((int)(Constants.MapWidth*0.9)),
+                rnd.Next((int)(Constants.MapHeight*0.9)))
         };
-        ConnectedUsers.TryAdd(Context.ConnectionId, info);
-        var existingplrs = ConnectedUsers.Values.ToList();
-        await Clients.Others.SendAsync("AddPlayerToLobbyClient", info);
-        foreach(var plr in existingplrs)
-            await Clients.Caller.SendAsync("AddPlayerToLobbyClient", plr);
-    }
-    public async Task AddOpponentToGame()
-    {
-        var opponentInfo = new OpponentInfo
+        var freshJoined = CurrentCanvasItems.TryAdd(info.Uuid, info);
+        var existingEntities = CurrentCanvasItems.Values.ToList();
+        await Clients.Others.SendAsync("AddEntityToLobbyClient", info); //player is displayed for other online clients
+        if(freshJoined && entityType == EntityType.PLAYER)
         {
-            Name = "Opponent1",
-            Color = new RGB(255, 0, 0),
-            Uuid = Context.ConnectionId,
-            X = 100,
-            Y = 100
-        };
-        ConnectedOpponents.TryAdd(opponentInfo.Uuid, opponentInfo);
-        await Clients.All.SendAsync("AddOpponentToGameClient", opponentInfo);
-    }
-
-
-    public async Task ClientMoved(Direction direction)
-    {
-        await Clients.All.SendAsync("UpdateClientPosition", direction, Context.ConnectionId);
-        //syncing location here for when a new player joins, 
-        //we know the correct coords of others to send it to him.
-        var playerInfo = ConnectedUsers[Context.ConnectionId];
-        switch(direction){
-            case Direction.UP: 
-                playerInfo.Y -= Constants.MoveStep;
-                break;
-            case Direction.DOWN:
-                playerInfo.Y += Constants.MoveStep;
-                break;
-            case Direction.LEFT:
-                playerInfo.X -= Constants.MoveStep;
-                break;
-            case Direction.RIGHT:
-                playerInfo.X += Constants.MoveStep;
-                break;
+            foreach(var entity in existingEntities) 
+                await Clients.Caller.SendAsync("AddEntityToLobbyClient", entity); //all items are displayed for the new player
         }
+        else await Clients.Caller.SendAsync("AddEntityToLobbyClient", info);
     }
 
 
-    public Task ServerMessageReceiver(string message)
+    public async Task EntityMoved(Vector2 moveDirection)
     {
-        var ctx = Context.GetHttpContext();
-        Console.WriteLine($"Message received from {ctx?.Connection.RemoteIpAddress}: {message}");
-        Clients.Others.SendAsync("SendMessageToClient", $"{ctx?.Connection.RemoteIpAddress}: {message}");
-        return Task.CompletedTask;
+        var playerInfo = CurrentCanvasItems[Context.ConnectionId];
+        
+        var x = 0f;
+        var y = 0f;
+        if(moveDirection.X > 0)
+            x = 1f;
+        else if(moveDirection.X < 0)
+            x = -1f;    
+        if(moveDirection.Y > 0)
+            y = 1f;
+        else if(moveDirection.Y < 0)
+            y = -1f;
+        var magn = (float)Math.Sqrt(x*x + y*y);
+        if(magn == 0)
+            return;
+        var newX = playerInfo.Location.X + x * Constants.MoveStep / magn;
+        var newY = playerInfo.Location.Y + y * Constants.MoveStep / magn;
+        playerInfo.Location = new(newX, newY);
+
+        await Clients.All.SendAsync("UpdateEntityPositionInClient", playerInfo.Location, Context.ConnectionId);
     }
 
     public override Task OnDisconnectedAsync(Exception? exception)
     {
-        ConnectedUsers.TryRemove(Context.ConnectionId, out _);
-        Clients.Others.SendAsync("RemoveDisconnectedPlayer", Context.ConnectionId);
+        CurrentCanvasItems.TryRemove(Context.ConnectionId, out _);
+        Clients.Others.SendAsync("RemoveObjectFromCanvas", Context.ConnectionId);
         Console.WriteLine($"Client from {Context.GetHttpContext()?.Connection.RemoteIpAddress} disconnected from gamer server chat socket.");
         return base.OnDisconnectedAsync(exception);
     }
-    public override Task OnConnectedAsync()
+    public override Task OnConnectedAsync() //this really does nothing except display in server console that connection happened
     {
         try
         {
@@ -91,12 +81,6 @@ public class PlayerHub : Hub
         return base.OnConnectedAsync();
     }
 
-    private readonly CoinBackgroundService _coinService;
-
-    public PlayerHub(CoinBackgroundService coinService)
-    {
-        _coinService = coinService;
-    }
     public async Task PickupCoin(string coinId)
     {
         Console.WriteLine("Picked up coinas");

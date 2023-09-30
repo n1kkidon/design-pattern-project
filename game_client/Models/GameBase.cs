@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using shared;
 
 namespace game_client.Models;
 
