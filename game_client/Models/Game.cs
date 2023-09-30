@@ -7,13 +7,15 @@ namespace game_client.Models;
 public class Game : GameBase
 {
     public Vector2 MovementInput;
+    private readonly SocketService socketService;
     protected override async Task Tick()
     {
-        var socketService = SocketService.GetInstance();
-        await socketService.OnCurrentPlayerMove(MovementInput);        
+        if(!MovementInput.Zero)
+            await socketService.OnCurrentPlayerMove(MovementInput);        
     }
     public Game() : base()
     {
         MovementInput = new(0, 0);
+        socketService = SocketService.GetInstance();
     }
 }

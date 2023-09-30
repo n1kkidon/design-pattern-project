@@ -67,7 +67,7 @@ public class GameObject
         var magn = (float)Math.Sqrt(x*x + y*y);
         if(magn == 0)
             return;
-        var newX = Location.X + x * Constants.MoveStep / magn; //inverted canvas i think, thats why '-'
+        var newX = Location.X + x * Constants.MoveStep / magn;
         var newY = Location.Y + y * Constants.MoveStep / magn;
         Location = new(newX, newY);
     }

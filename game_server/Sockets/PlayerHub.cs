@@ -1,8 +1,6 @@
 using System.Collections.Concurrent;
-using System.Drawing;
 using Microsoft.AspNetCore.SignalR;
 using shared;
-using Microsoft.Extensions.DependencyInjection;
 
 public class PlayerHub : Hub
 {
