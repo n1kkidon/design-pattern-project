@@ -38,26 +38,26 @@ public partial class MainWindow : Window
 
         socketService.AddOpponentToGame().Wait();
 
-        //keymaps
-        InputHandler.SetCommand(Key.W, new MoveUpCommand());
-        InputHandler.SetCommand(Key.A, new MoveLeftCommand());
-        InputHandler.SetCommand(Key.S, new MoveDownCommand());
-        InputHandler.SetCommand(Key.D, new MoveRightCommand());
-
         var game = new Game(); //tickrate
+        //keymaps
+        InputHandler.SetCommand(Key.W, new MoveUpCommand(false, game));
+        InputHandler.SetCommand(Key.A, new MoveLeftCommand(false, game));
+        InputHandler.SetCommand(Key.S, new MoveDownCommand(false, game));
+        InputHandler.SetCommand(Key.D, new MoveRightCommand(false, game));
+
+        
         game.Start();
-        //KeyDown += async (sender, e) => await InputHandler.HandleInput(e.Key);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
-        Keyboard.Keys.Add(e.Key);
+        InputHandler.AddKey(e.Key);
         base.OnKeyUp(e);
     }
 
     protected override void OnKeyUp(KeyEventArgs e)
     {
-        Keyboard.Keys.Remove(e.Key);
+        InputHandler.RemoveKey(e.Key);
         base.OnKeyUp(e);
     }
 }

@@ -16,8 +16,8 @@ public class PlayerHub : Hub
             Color = color,
             Name = name,
             Uuid = Context.ConnectionId,
-            X = rnd.Next((int)(Constants.MapWidth*0.9)),
-            Y = rnd.Next((int)(Constants.MapHeight*0.9))
+            Location = new(rnd.Next((int)(Constants.MapWidth*0.9)),
+                rnd.Next((int)(Constants.MapHeight*0.9)))
         };
         ConnectedUsers.TryAdd(Context.ConnectionId, info);
         var existingplrs = ConnectedUsers.Values.ToList();
@@ -32,34 +32,20 @@ public class PlayerHub : Hub
             Name = "Opponent1",
             Color = new RGB(255, 0, 0),
             Uuid = Context.ConnectionId,
-            X = 100,
-            Y = 100
+            Location = new(100, 100)
         };
         ConnectedOpponents.TryAdd(opponentInfo.Uuid, opponentInfo);
         await Clients.All.SendAsync("AddOpponentToGameClient", opponentInfo);
     }
 
 
-    public async Task ClientMoved(Direction direction)
+    public async Task ClientMoved(Vector2 direction)
     {
         await Clients.All.SendAsync("UpdateClientPosition", direction, Context.ConnectionId);
         //syncing location here for when a new player joins, 
         //we know the correct coords of others to send it to him.
         var playerInfo = ConnectedUsers[Context.ConnectionId];
-        switch(direction){
-            case Direction.UP: 
-                playerInfo.Y -= Constants.MoveStep;
-                break;
-            case Direction.DOWN:
-                playerInfo.Y += Constants.MoveStep;
-                break;
-            case Direction.LEFT:
-                playerInfo.X -= Constants.MoveStep;
-                break;
-            case Direction.RIGHT:
-                playerInfo.X += Constants.MoveStep;
-                break;
-        }
+        playerInfo.Location += direction;
     }
 
 

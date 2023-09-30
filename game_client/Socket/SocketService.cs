@@ -25,7 +25,7 @@ public class SocketService
         .WithUrl(url + "/playerHub")
         .Build();   
         socket.On("AddPlayerToLobbyClient", (PlayerInfo p) => AddPlayerToLobbyClient(p));
-        socket.On("UpdateClientPosition", (Direction d, string uuid) => UpdateClientPosition(d, uuid));
+        socket.On("UpdateClientPosition", (Vector2 d, string uuid) => UpdateClientPosition(d, uuid));
         socket.On("RemoveDisconnectedPlayer", (string uuid) => RemoveDisconnectedPlayer(uuid));
         socket.On("AddOpponentToGameClient", (OpponentInfo o) => AddOpponentToGameClient(o));
         socket.On("AddCoinToMap", (Coin coin, string coinId) => AddCoinToGameClient(coin, coinId));
@@ -45,7 +45,7 @@ public class SocketService
         return instance;
     }
 
-    public async Task OnCurrentPlayerMove(Direction direction)
+    public async Task OnCurrentPlayerMove(Vector2 direction)
     {
         await socket.InvokeAsync("ClientMoved", direction);
     }
@@ -62,8 +62,9 @@ public class SocketService
     private void AddPlayerToLobbyClient(PlayerInfo player)
     {
         Dispatcher.UIThread.Invoke(() => {
-            var playerpxl = new PlayerPixel(player.Name, Color.FromRgb(player.Color.R, player.Color.G, player.Color.B), player.X, player.Y);
-            MainWindow.GetInstance().canvas.Children.Add(playerpxl.PlayerObject);
+            var playerpxl = new PlayerPixel(player.Name, Color.FromRgb(player.Color.R, player.Color.G, player.Color.B), player.Location);
+            playerpxl.AddObjectToCanvas();
+            System.Console.WriteLine($"Width: {playerpxl.GetWidth()} Height: {playerpxl.GetHeight()}");
             ConnectedPlayers.TryAdd(player.Uuid, playerpxl);
         });
     }
@@ -74,25 +75,25 @@ public class SocketService
         ConnectedPlayers.TryRemove(uuid, out var playerpxl);
         if(playerpxl != null)
             Dispatcher.UIThread.Invoke(() => {
-                MainWindow.GetInstance().canvas.Children.Remove(playerpxl.PlayerObject);
+                playerpxl.RemoveObjectFromCanvas();
             });
     }
 
-    private async void UpdateClientPosition(Direction direction, string uuid)
+    private async void UpdateClientPosition(Vector2 direction, string uuid)
     {
         await Dispatcher.UIThread.InvokeAsync(async () =>
         {
             var playerpxl = ConnectedPlayers[uuid];
             playerpxl.Move(direction);
-            await SocketService.GetInstance().CheckForCoinPickup(playerpxl);
+            await CheckForCoinPickup(playerpxl);
         });
     }
 
     private void AddOpponentToGameClient(OpponentInfo opponent)
     {
         Dispatcher.UIThread.Invoke(() => {
-            var opponentPxl = new PlayerPixel(opponent.Name, Color.FromRgb(opponent.Color.R, opponent.Color.G, opponent.Color.B), opponent.X, opponent.Y);
-            MainWindow.GetInstance().canvas.Children.Add(opponentPxl.PlayerObject);
+            var opponentPxl = new PlayerPixel(opponent.Name, Color.FromRgb(opponent.Color.R, opponent.Color.G, opponent.Color.B), opponent.Location);
+            opponentPxl.RemoveObjectFromCanvas();
             ConnectedOpponents.TryAdd(opponent.Uuid, opponentPxl);
         });
     }
@@ -128,8 +129,8 @@ public class SocketService
         double halfSizePlayer = sizePlayer / 2.0 + extraPadding;
         double halfSizeCoin = sizeCoin / 2.0 + extraPadding;
 
-        double playerCenterX = Canvas.GetLeft(player.PlayerObject) + sizePlayer / 2.0;
-        double playerCenterY = Canvas.GetTop(player.PlayerObject) + sizePlayer / 2.0;
+        double playerCenterX = player.Location.X;
+        double playerCenterY = player.Location.Y;
 
         double coinCenterX = Canvas.GetLeft(coin.CoinObject) + sizeCoin / 2.0;
         double coinCenterY = Canvas.GetTop(coin.CoinObject) + sizeCoin / 2.0;
