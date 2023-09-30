@@ -5,7 +5,6 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using game_client.Models;
 using game_client.Socket;
-using shared;
 
 namespace game_client.Views;
 
@@ -17,7 +16,7 @@ public partial class MainWindow : Window
         _instance ??= new();
         return _instance;
     }
-    public MainWindow()
+    public MainWindow() //this will be private when the IDE preview window is no longer needed
     {
         InitializeComponent();
     }

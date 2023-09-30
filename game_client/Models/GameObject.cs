@@ -1,4 +1,3 @@
-using System;
 using Avalonia.Controls;
 using game_client.Views;
 using shared;
@@ -53,9 +52,6 @@ public class GameObject
     public void AddObjectToCanvas() => MainWindow.GetInstance().canvas.Children.Add(stackPanel);
     public void RemoveObjectFromCanvas() => MainWindow.GetInstance().canvas.Children.Remove(stackPanel);
 
-    public void Move(Vector2 moveDirection){ //TODO: update correct location in the server
-
-    }
     public void TeleportTo(Vector2 location)
     {
         Location = location;

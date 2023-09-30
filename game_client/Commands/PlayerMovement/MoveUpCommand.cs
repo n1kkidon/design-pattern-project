@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using game_client.Commands.PlayerMovement;
 using game_client.Models;
 

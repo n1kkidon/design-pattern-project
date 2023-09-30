@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia.Input;
-using game_client.Models;
 
 namespace game_client;
 
 public static class InputHandler
 {
     private static readonly Dictionary<Key, ICommand> keyMapping = new();
-
     public static IEnumerable<Key> KeysWithRegistedCommands { get => keyMapping.Keys; }
-
-    public static event Action<Key>? KeyDown;
-    public static event Action<Key>? KeyUp;
 
     public static void SetCommand(Key key, ICommand command)
     {
@@ -42,7 +36,6 @@ public static class InputHandler
     public static void AddKey(Key key) //on key press
     {
         Keys.Add(key);
-        KeyDown?.Invoke(key);
         if(keyMapping.TryGetValue(key, out var command))
         {
             command.Execute();
@@ -51,7 +44,6 @@ public static class InputHandler
     public static void RemoveKey(Key key) //on key up
     {
         Keys.Remove(key);
-        KeyUp?.Invoke(key);
         if(keyMapping.TryGetValue(key, out var command))
         {
             command.OnKeyUp();

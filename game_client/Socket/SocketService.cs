@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Threading;
 using game_client.Models;
 using Microsoft.AspNetCore.SignalR.Client;
 using shared;
-using Tmds.DBus.Protocol;
+
 namespace game_client.Socket;
 
 public class SocketService
@@ -85,7 +83,7 @@ public class SocketService
     {
         foreach (var coin in CurrentCanvasObjects)
         {
-            if (coin.Value is CoinView view && CheckCollision(currentPlayer, view)) //TODO: call server here
+            if (coin.Value is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
             {
                 await socket.InvokeAsync("PickupCoin", coin.Key);
                 RemoveObjectFromCanvas(coin.Key);
