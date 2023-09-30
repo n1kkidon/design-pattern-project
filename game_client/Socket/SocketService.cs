@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
 using game_client.Models;
-using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
 using shared;
 using Tmds.DBus.Protocol;
@@ -13,23 +13,19 @@ namespace game_client.Socket;
 
 public class SocketService
 {
-    private readonly ConcurrentDictionary<string, PlayerPixel> ConnectedPlayers = new();
-    private readonly ConcurrentDictionary<string, PlayerPixel> ConnectedOpponents = new();
-    private readonly ConcurrentDictionary<string, CoinView> coinViews = new();
-    private HubConnection socket {get; set;}
+    private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
+    private readonly HubConnection socket;
+    private readonly CanvasObjectFactory factory;
     private SocketService()
     {
         var url = Constants.ServerIP;
-        
+        factory = new();
         socket = new HubConnectionBuilder()
         .WithUrl(url + "/playerHub")
         .Build();   
-        socket.On("AddPlayerToLobbyClient", (PlayerInfo p) => AddPlayerToLobbyClient(p));
-        socket.On("UpdateClientPosition", (Vector2 d, string uuid) => UpdateClientPosition(d, uuid));
-        socket.On("RemoveDisconnectedPlayer", (string uuid) => RemoveDisconnectedPlayer(uuid));
-        socket.On("AddOpponentToGameClient", (OpponentInfo o) => AddOpponentToGameClient(o));
-        socket.On("AddCoinToMap", (Coin coin, string coinId) => AddCoinToGameClient(coin, coinId));
-        socket.On("CoinPickedUp", (string coinId) => RemoveCoinFromUI(coinId));
+        socket.On("AddEntityToLobbyClient", (CanvasObjectInfo p) => AddEntityToLobbyClient(p));
+        socket.On("UpdateEntityPositionInClient", (Vector2 d, string uuid) => UpdateEntityPositionInClient(d, uuid));
+        socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
@@ -47,104 +43,64 @@ public class SocketService
 
     public async Task OnCurrentPlayerMove(Vector2 direction)
     {
-        await socket.InvokeAsync("ClientMoved", direction);
+        await socket.InvokeAsync("EntityMoved", direction);
     }
 
     public async Task JoinGameLobby(string name, Color color) //this goes through backend, which calls the AddPlayerToLobby() below
     {
-       await socket.SendAsync("AddPlayerToLobby", name, new RGB(color.R, color.G, color.B));
+       await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER);
     }
     public async Task AddOpponentToGame()
     {
-        await socket.SendAsync("AddOpponentToGame");
+        await socket.SendAsync("AddEntityToLobby", "Opponent1", new RGB(255, 0, 0), EntityType.ENEMY);
     }
 
-    private void AddPlayerToLobbyClient(PlayerInfo player)
+    private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
     {
         Dispatcher.UIThread.Invoke(() => {
-            var playerpxl = new PlayerPixel(player.Name, Color.FromRgb(player.Color.R, player.Color.G, player.Color.B), player.Location);
-            playerpxl.AddObjectToCanvas();
-            ConnectedPlayers.TryAdd(player.Uuid, playerpxl);
+            var entity = factory.CreateCanvasObject(entityInfo);
+            entity.AddObjectToCanvas();
+            CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
         });
     }
 
-
-    private void RemoveDisconnectedPlayer(string uuid)
+    private void RemoveObjectFromCanvas(string uuid)
     {
-        ConnectedPlayers.TryRemove(uuid, out var playerpxl);
-        if(playerpxl != null)
-            Dispatcher.UIThread.Invoke(() => {
-                playerpxl.RemoveObjectFromCanvas();
-            });
+        CurrentCanvasObjects.TryRemove(uuid, out var entity);
+        if(entity != null)
+            Dispatcher.UIThread.Invoke(entity.RemoveObjectFromCanvas);
     }
 
-    private async void UpdateClientPosition(Vector2 direction, string uuid)
+    private async void UpdateEntityPositionInClient(Vector2 direction, string uuid)
     {
         await Dispatcher.UIThread.InvokeAsync(async () =>
         {
-            var playerpxl = ConnectedPlayers[uuid];
-            playerpxl.Move(direction);
-            await CheckForCoinPickup(playerpxl);
-        });
-    }
-
-    private void AddOpponentToGameClient(OpponentInfo opponent)
-    {
-        Dispatcher.UIThread.Invoke(() => {
-            var opponentPxl = new PlayerPixel(opponent.Name, Color.FromRgb(opponent.Color.R, opponent.Color.G, opponent.Color.B), opponent.Location);
-            opponentPxl.AddObjectToCanvas();
-            ConnectedOpponents.TryAdd(opponent.Uuid, opponentPxl);
-        });
-    }
-
-    private void AddCoinToGameClient(Coin coin, string coinId)
-    {
-        Dispatcher.UIThread.Invoke(() =>
-        {
-            var coinView = new CoinView(coin.X, coin.Y);
-            MainWindow.GetInstance().canvas.Children.Add(coinView.CoinObject);
-            coinViews[coinId] = coinView;  // Store the coinView with its ID
+            var playerpxl = CurrentCanvasObjects[uuid];
+            playerpxl.TeleportTo(direction);
+            await CheckForCoinPickup((PlayerPixel)playerpxl);
         });
     }
 
     public async Task CheckForCoinPickup(PlayerPixel currentPlayer)
     {
-        foreach (var coin in coinViews)
+        foreach (var coin in CurrentCanvasObjects)
         {
-            if (CheckCollision(currentPlayer, coin.Value))
+            if (coin.Value is CoinView view && CheckCollision(currentPlayer, view)) //TODO: call server here
             {
                 await socket.InvokeAsync("PickupCoin", coin.Key);
-                RemoveCoinFromUI(coin.Key);
+                RemoveObjectFromCanvas(coin.Key);
                 break;
             }
         }
     }
     private bool CheckCollision(PlayerPixel player, CoinView coin)
     {
-        double sizePlayer = 15;
-        double sizeCoin = 10;
         double extraPadding = 1;  // the extra area for detection
 
-        double halfSizePlayer = sizePlayer / 2.0 + extraPadding;
-        double halfSizeCoin = sizeCoin / 2.0 + extraPadding;
+        double halfSizePlayer = player.GetWidth() / 2.0 + extraPadding;
+        double halfSizeCoin = coin.GetWidth() / 2.0 + extraPadding;
 
-        double playerCenterX = player.Location.X;
-        double playerCenterY = player.Location.Y;
-
-        double coinCenterX = Canvas.GetLeft(coin.CoinObject) + sizeCoin / 2.0;
-        double coinCenterY = Canvas.GetBottom(coin.CoinObject) + sizeCoin / 2.0;
-        return Math.Abs(playerCenterX - coinCenterX) < (halfSizePlayer + halfSizeCoin) &&
-               Math.Abs(playerCenterY - coinCenterY) < (halfSizePlayer + halfSizeCoin);
-    }
-
-    private void RemoveCoinFromUI(string coinId)
-    {
-        if (coinViews.TryRemove(coinId, out var coin))
-        {
-            Dispatcher.UIThread.Invoke(() =>
-            {
-                MainWindow.GetInstance().canvas.Children.Remove(coin.CoinObject);
-            });
-        }
+        return Math.Abs(player.Location.X - coin.Location.X) < (halfSizePlayer + halfSizeCoin) &&
+               Math.Abs(player.Location.Y - coin.Location.Y) < (halfSizePlayer + halfSizeCoin);
     }
 }

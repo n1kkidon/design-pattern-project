@@ -1,15 +1,13 @@
+using game_server.Sockets;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Hosting;
 using shared;
-using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
+
+namespace game_server.Services;
 
 public class CoinBackgroundService : BackgroundService
 {
     private readonly IHubContext<PlayerHub> _hubContext;
-    private readonly Random _random = new Random();
-    public static ConcurrentDictionary<string, Coin> CurrentCoins = new();
+    private readonly Random _random = new();
 
     public CoinBackgroundService(IHubContext<PlayerHub> hubContext)
     {
@@ -20,24 +18,27 @@ public class CoinBackgroundService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var coin = new Coin
+            var info = new CanvasObjectInfo
             {
-                X = _random.Next((int)(Constants.MapWidth * 0.9)),
-                Y = _random.Next((int)(Constants.MapHeight * 0.9))
+                EntityType = EntityType.COIN,
+                Location = new Vector2
+                {
+                    X = _random.Next((int)(Constants.MapWidth * 0.9)),
+                    Y = _random.Next((int)(Constants.MapHeight * 0.9))
+                },
+                Uuid = Guid.NewGuid().ToString(),
             };
-
-            var coinId = Guid.NewGuid().ToString();
-            CurrentCoins[coinId] = coin;
-            await _hubContext.Clients.All.SendAsync("AddCoinToMap", coin, coinId);
+            PlayerHub.CurrentCanvasItems[info.Uuid] = info;
+            await _hubContext.Clients.All.SendAsync("AddEntityToLobbyClient", info);
             await Task.Delay(TimeSpan.FromSeconds(_random.Next(10, 21)), stoppingToken);
         }
     }
 
     public async Task PickupCoin(string coinId)
     {
-        if (CoinBackgroundService.CurrentCoins.TryRemove(coinId, out _))
+        if (PlayerHub.CurrentCanvasItems.TryRemove(coinId, out _))
         {
-            await _hubContext.Clients.All.SendAsync("CoinPickedUp", coinId);
+            await _hubContext.Clients.All.SendAsync("RemoveObjectFromCanvas", coinId);
         }
     }
 }

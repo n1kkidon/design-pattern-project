@@ -53,22 +53,11 @@ public class GameObject
     public void AddObjectToCanvas() => MainWindow.GetInstance().canvas.Children.Add(stackPanel);
     public void RemoveObjectFromCanvas() => MainWindow.GetInstance().canvas.Children.Remove(stackPanel);
 
-    public void Move(Vector2 direction){ //TODO: update correct location in the server
-        var x = 0f;
-        var y = 0f;
-        if(direction.X > 0)
-            x = 1f;
-        else if(direction.X < 0)
-            x = -1f;    
-        if(direction.Y > 0)
-            y = 1f;
-        else if(direction.Y < 0)
-            y = -1f;
-        var magn = (float)Math.Sqrt(x*x + y*y);
-        if(magn == 0)
-            return;
-        var newX = Location.X + x * Constants.MoveStep / magn;
-        var newY = Location.Y + y * Constants.MoveStep / magn;
-        Location = new(newX, newY);
+    public void Move(Vector2 moveDirection){ //TODO: update correct location in the server
+
+    }
+    public void TeleportTo(Vector2 location)
+    {
+        Location = location;
     }
 }
