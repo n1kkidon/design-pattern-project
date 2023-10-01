@@ -21,7 +21,8 @@ public class MoveLeftCommand : ICommand, IMoveCommand
     }
     public Task OnKeyUp()
     {
-        game.MovementInput.X = 0f;
+        if(game.MovementInput.X == -1f)
+            game.MovementInput.X = 0f;
         return Task.CompletedTask;
     }
 }

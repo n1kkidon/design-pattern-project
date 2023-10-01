@@ -22,7 +22,8 @@ public class MoveDownCommand : ICommand, IMoveCommand
 
     public Task OnKeyUp()
     {
-        game.MovementInput.Y = 0f;
+        if(game.MovementInput.Y == -1f)
+            game.MovementInput.Y = 0f;
         return Task.CompletedTask;
     }
 }
