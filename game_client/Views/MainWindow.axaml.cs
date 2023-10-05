@@ -26,6 +26,11 @@ public partial class MainWindow : Window
         var name = nameField.Text;
         if (name == null)
             return;
+
+        // Reset the coin count and update the coin counter
+        SocketService.GetInstance().ResetCoinCount();
+        SocketService.GetInstance().UpdateCoinCounter();
+
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
 

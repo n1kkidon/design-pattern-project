@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Threading;
 using game_client.Models;
+using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
 using shared;
 
@@ -14,6 +15,9 @@ public class SocketService
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
+
+    private int coinCount;
+
     private SocketService()
     {
         var url = Constants.ServerIP;
@@ -27,6 +31,8 @@ public class SocketService
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
+
+        coinCount = 0;
     }
     public string GetCurrentConnectionId()
     {
@@ -87,6 +93,10 @@ public class SocketService
             {
                 await socket.InvokeAsync("PickupCoin", coin.Key);
                 RemoveObjectFromCanvas(coin.Key);
+
+                coinCount++;
+                UpdateCoinCounter(); // Update the coin counter
+
                 break;
             }
         }
@@ -100,5 +110,20 @@ public class SocketService
 
         return Math.Abs(player.Location.X - coin.Location.X) < (halfSizePlayer + halfSizeCoin) &&
                Math.Abs(player.Location.Y - coin.Location.Y) < (halfSizePlayer + halfSizeCoin);
+    }
+
+    public void UpdateCoinCounter()
+    {
+        // Update the UI with the current coin count
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var mainWindow = MainWindow.GetInstance();
+            mainWindow.coinCounter.Text = $"Coins: {coinCount}";
+        });
+    }
+
+    public void ResetCoinCount()
+    {
+        coinCount = 0; // Reset the coin count
     }
 }
