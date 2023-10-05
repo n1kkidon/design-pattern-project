@@ -9,6 +9,9 @@ public class PlayerPixel : GameObject
 {
     private TextBlock NameTag;
     private Rectangle Pixel;
+    private Rectangle HealthBar;
+
+    private int health = 10;
 
     public PlayerPixel(string name, Color color, Vector2 location) : base(location){ //initial location 
         NameTag = new(){
@@ -24,5 +27,40 @@ public class PlayerPixel : GameObject
         };
         stackPanel.Children.Add(NameTag);
         stackPanel.Children.Add(Pixel);
+
+        HealthBar = new Rectangle
+        {
+            Width = 30,
+            Height = 10,
+            Fill = Brushes.Green, // Initial health bar color
+        };
+        stackPanel.Children.Add(HealthBar);
+    }
+
+    public void UpdateHealthBar()
+    {
+        // Calculate the width of the health bar based on the player's health
+        double healthBarWidth = (health / 10.0) * 30; // Assuming max health is 10 and health bar width is 30
+
+        // Update the health bar's width
+        HealthBar.Width = healthBarWidth;
+
+        // Change the color of the health bar based on the player's health
+        if (health <= 7)
+        {
+            HealthBar.Fill = Brushes.Red; // Low health is red
+        }
+        else
+        {
+            HealthBar.Fill = Brushes.Green; // Normal health is green
+        }
+    }
+
+    public void DecreaseHealth()
+    {
+        if (health > 0)
+        {
+            health--;
+        }
     }
 }

@@ -81,11 +81,11 @@ public class SocketService
         {
             var playerpxl = CurrentCanvasObjects[uuid];
             playerpxl.TeleportTo(direction);
-            await CheckForCoinPickup((PlayerPixel)playerpxl);
+            await CheckForObjectCollision((PlayerPixel)playerpxl);
         });
     }
 
-    public async Task CheckForCoinPickup(PlayerPixel currentPlayer)
+    public async Task CheckForObjectCollision(PlayerPixel currentPlayer)
     {
         foreach (var coin in CurrentCanvasObjects)
         {
@@ -99,17 +99,23 @@ public class SocketService
 
                 break;
             }
+            else if (coin.Value is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
+            {
+                currentPlayer.DecreaseHealth(); // Decrease player health
+                currentPlayer.UpdateHealthBar(); // Update the health bar
+            }
         }
     }
-    private bool CheckCollision(PlayerPixel player, CoinView coin)
+
+    private bool CheckCollision(PlayerPixel player, GameObject coin)
     {
         double extraPadding = 1;  // the extra area for detection
 
         double halfSizePlayer = player.GetWidth() / 2.0 + extraPadding;
-        double halfSizeCoin = coin.GetWidth() / 2.0 + extraPadding;
+        double halfSizeObject = coin.GetWidth() / 2.0 + extraPadding;
 
-        return Math.Abs(player.Location.X - coin.Location.X) < (halfSizePlayer + halfSizeCoin) &&
-               Math.Abs(player.Location.Y - coin.Location.Y) < (halfSizePlayer + halfSizeCoin);
+        return Math.Abs(player.Location.X - coin.Location.X) < (halfSizePlayer + halfSizeObject) &&
+               Math.Abs(player.Location.Y - coin.Location.Y) < (halfSizePlayer + halfSizeObject);
     }
 
     public void UpdateCoinCounter()
