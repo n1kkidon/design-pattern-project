@@ -109,13 +109,15 @@ public class SocketService
 
     private bool CheckCollision(PlayerPixel player, GameObject coin)
     {
-        double extraPadding = 1;  // the extra area for detection
+        float extraPadding = 0;  // the extra area for detection
 
-        double halfSizePlayer = player.GetWidth() / 2.0 + extraPadding;
-        double halfSizeObject = coin.GetWidth() / 2.0 + extraPadding;
+        float halfWidthPlayer = player.GetWidth() / 2f + extraPadding;
+        float halfHeightPlayer = player.GetHeight() / 2f + extraPadding;
+        float halfWidthObject = coin.GetWidth() / 2f + extraPadding;
+        float halfHeightObject = coin.GetHeight() / 2f + extraPadding;
 
-        return Math.Abs(player.Location.X - coin.Location.X) < (halfSizePlayer + halfSizeObject) &&
-               Math.Abs(player.Location.Y - coin.Location.Y) < (halfSizePlayer + halfSizeObject);
+        return Math.Abs(player.Location.X - coin.Location.X) < (halfWidthPlayer + halfWidthObject) &&
+               Math.Abs(player.Location.Y - coin.Location.Y) < (halfHeightPlayer + halfHeightObject);
     }
 
     public void UpdateCoinCounter()

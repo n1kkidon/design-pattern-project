@@ -17,10 +17,10 @@ public class EnemyPixel : GameObject
         };
         Pixel = new(){
             Fill = new SolidColorBrush(color),
-            Width = 15,
-            Height = 15
+            Width = 16,
+            Height = 16
         };
-        stackPanel.Children.Add(Pixel);
-        stackPanel.Children.Add(NameTag);
+        AddToStackPanel(Pixel);
+        AddToStackPanel(NameTag, true);
     }
 }

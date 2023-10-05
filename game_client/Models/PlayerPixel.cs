@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
@@ -22,11 +23,11 @@ public class PlayerPixel : GameObject
         };
         Pixel = new(){
             Fill = new SolidColorBrush(color),
-            Width = 15,
-            Height = 15
+            Width = 16,
+            Height = 16
         };
-        stackPanel.Children.Add(NameTag);
-        stackPanel.Children.Add(Pixel);
+        AddToStackPanel(NameTag, true);
+        AddToStackPanel(Pixel);
 
         HealthBar = new Rectangle
         {
@@ -34,7 +35,7 @@ public class PlayerPixel : GameObject
             Height = 10,
             Fill = Brushes.Green, // Initial health bar color
         };
-        stackPanel.Children.Add(HealthBar);
+        AddToStackPanel(HealthBar, true);
     }
 
     public void UpdateHealthBar()

@@ -16,7 +16,7 @@ namespace game_client.Models
                 Width = 10,
                 Height = 10
             };
-            stackPanel.Children.Add(CoinShape);
+            AddToStackPanel(CoinShape);
         }
     }
 }
