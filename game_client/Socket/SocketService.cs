@@ -13,6 +13,7 @@ namespace game_client.Socket;
 public class SocketService
 {
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
+    private AbstractEnemyFactory enemyFactory = new BasicEnemyFactory();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
 
@@ -56,6 +57,7 @@ public class SocketService
     }
     public async Task AddOpponentToGame()
     {
+        var enemyPixel = enemyFactory.CreateEnemyPixel("Opponent1", Color.FromRgb(255, 0, 0), new Vector2(400, 300));
         await socket.SendAsync("AddEntityToLobby", "Opponent1", new RGB(255, 0, 0), EntityType.ENEMY);
     }
 
