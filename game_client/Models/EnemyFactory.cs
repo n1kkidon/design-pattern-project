@@ -16,10 +16,10 @@ namespace game_client.Models
         {
             return difficulty switch
             {
-                "Easy" => new EasyEnemyStats(),
-                "Medium" => new MediumEnemyStats(),
-                "Hard" => new HardEnemyStats(),
-                "Insane" => new InsaneEnemyStats(),
+                "EasySoldier" => new EasySoldierStats(),
+                "HardSoldier" => new HardSoldierStats(),
+                "EasyKnight" => new EasyKnightStats(),
+                "HardKnight" => new HardKnightStats(),
                 _ => throw new ArgumentException("Invalid difficulty")
             };
         }

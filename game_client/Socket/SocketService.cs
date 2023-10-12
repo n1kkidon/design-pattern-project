@@ -57,11 +57,11 @@ public class SocketService
     }
     public async Task AddOpponentToGame()
     {
-        string[] difficulties = new[] { "Easy", "Medium", "Hard", "Insane" };
+        string[] difficulties = new[] { "EasySoldier", "HardSoldier", "EasyKnight", "HardKnight" };
         foreach (var difficulty in difficulties)
         {
-            var enemyPixel = enemyFactory.CreateEnemyPixel(difficulty, $"{difficulty}Opponent", Color.FromRgb(255, 0, 0), new Vector2(400, 300));
-            await socket.SendAsync("AddEntityToLobby", $"{difficulty}Opponent", new RGB(255, 0, 0), EntityType.ENEMY);
+            var enemyPixel = enemyFactory.CreateEnemyPixel(difficulty, $"{difficulty}", Color.FromRgb(255, 0, 0), new Vector2(400, 300));
+            await socket.SendAsync("AddEntityToLobby", $"{difficulty}", new RGB(255, 0, 0), EntityType.ENEMY);
         }
     }
     private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
