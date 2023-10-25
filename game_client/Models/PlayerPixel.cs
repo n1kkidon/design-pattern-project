@@ -47,22 +47,6 @@ public class PlayerPixel : GameObject, ISubject
         new HealthBarObserver(this, HealthBar);
     }
 
-
-    public void UpdateHealthBar()
-    {
-        double healthBarWidth = (health / 10.0) * 30;
-        HealthBar.Width = healthBarWidth;
-
-        if (health <= 7)
-        {
-            HealthBar.Fill = Brushes.Red;
-        }
-        else
-        {
-            HealthBar.Fill = Brushes.Green;
-        }
-    }
-
     public void DecreaseHealth()
     {
         if (health > 0)
