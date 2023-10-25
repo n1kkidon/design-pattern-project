@@ -2,11 +2,13 @@ using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using game_client.Observer;
 using shared;
+using System.Collections.Generic;
 
 namespace game_client.Models;
 
-public class PlayerPixel : GameObject
+public class PlayerPixel : GameObject, ISubject
 {
     private TextBlock NameTag;
     private Rectangle Pixel;
@@ -14,14 +16,19 @@ public class PlayerPixel : GameObject
 
     private int health = 10;
 
-    public PlayerPixel(string name, Color color, Vector2 location) : base(location){ //initial location 
-        NameTag = new(){
+    private List<IObserver> observers = new();
+
+    public PlayerPixel(string name, Color color, Vector2 location) : base(location)
+    {
+        NameTag = new()
+        {
             Foreground = new SolidColorBrush(Colors.White),
             Text = name,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
         };
-        Pixel = new(){
+        Pixel = new()
+        {
             Fill = new SolidColorBrush(color),
             Width = 16,
             Height = 16
@@ -33,27 +40,26 @@ public class PlayerPixel : GameObject
         {
             Width = 30,
             Height = 10,
-            Fill = Brushes.Green, // Initial health bar color
+            Fill = Brushes.Green,
         };
         AddToStackPanel(HealthBar, true);
+
+        new HealthBarObserver(this, HealthBar);
     }
+
 
     public void UpdateHealthBar()
     {
-        // Calculate the width of the health bar based on the player's health
-        double healthBarWidth = (health / 10.0) * 30; // Assuming max health is 10 and health bar width is 30
-
-        // Update the health bar's width
+        double healthBarWidth = (health / 10.0) * 30;
         HealthBar.Width = healthBarWidth;
 
-        // Change the color of the health bar based on the player's health
         if (health <= 7)
         {
-            HealthBar.Fill = Brushes.Red; // Low health is red
+            HealthBar.Fill = Brushes.Red;
         }
         else
         {
-            HealthBar.Fill = Brushes.Green; // Normal health is green
+            HealthBar.Fill = Brushes.Green;
         }
     }
 
@@ -62,6 +68,25 @@ public class PlayerPixel : GameObject
         if (health > 0)
         {
             health--;
+            NotifyObservers();
+        }
+    }
+
+    public void RegisterObserver(IObserver observer)
+    {
+        observers.Add(observer);
+    }
+
+    public void RemoveObserver(IObserver observer)
+    {
+        observers.Remove(observer);
+    }
+
+    public void NotifyObservers()
+    {
+        foreach (var observer in observers)
+        {
+            observer.Update(health);
         }
     }
 }
