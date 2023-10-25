@@ -107,7 +107,6 @@ public class SocketService
             else if (coin.Value is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
             {
                 currentPlayer.DecreaseHealth(); // Decrease player health
-                currentPlayer.UpdateHealthBar(); // Update the health bar
             }
         }
     }
