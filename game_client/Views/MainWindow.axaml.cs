@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using game_client.Models;
 using game_client.Socket;
+using game_client.Adapters;
 
 namespace game_client.Views;
 
@@ -35,11 +36,15 @@ public partial class MainWindow : Window
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
 
-        Random rnd = new();
+        // Generate a random System.Drawing.Color
+        Random rnd = new Random();
+        System.Drawing.Color randomDrawingColor = System.Drawing.Color.FromArgb(
+            rnd.Next(256), rnd.Next(256), rnd.Next(256));
+
+        Avalonia.Media.Color randomAvaloniaColor = ColorAdapter.ToAvaloniaColor(randomDrawingColor);
+
         var socketService = SocketService.GetInstance();
-        socketService.JoinGameLobby(name, Color.FromRgb((byte)rnd.Next(255),
-                                                        (byte)rnd.Next(255),
-                                                        (byte)rnd.Next(255))).Wait();
+        socketService.JoinGameLobby(name, randomAvaloniaColor).Wait();
 
         socketService.AddOpponentToGame().Wait();
 
