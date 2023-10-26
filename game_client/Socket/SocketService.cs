@@ -1,11 +1,15 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
 using game_client.Models;
 using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using shared;
 
 namespace game_client.Socket;
@@ -29,6 +33,7 @@ public class SocketService
         socket.On("AddEntityToLobbyClient", (CanvasObjectInfo p) => AddEntityToLobbyClient(p));
         socket.On("UpdateEntityPositionInClient", (Vector2 d, string uuid) => UpdateEntityPositionInClient(d, uuid));
         socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
+        socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition) => UpdateOnProjectileInClient(direction, initialPosition));
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
@@ -44,6 +49,10 @@ public class SocketService
     {
         instance ??= new();
         return instance;
+    }
+    public async Task OnCurrentPlayerShoot(Vector2 direction)
+    {
+        await socket.InvokeAsync("ProjectileShot", direction);
     }
 
     public async Task OnCurrentPlayerMove(Vector2 direction)
@@ -87,6 +96,62 @@ public class SocketService
             playerpxl.TeleportTo(direction);
             await CheckForObjectCollision((PlayerPixel)playerpxl);
         });
+    }
+
+    private async void UpdateOnProjectileInClient(Vector2 direction, Vector2 initialPosition) //TODO: change direction from click location to final (colide) location
+    {
+        var game = Game.GetInstance();
+        Projectile projectile;
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            projectile = new Projectile(initialPosition);
+            projectile.AddObjectToCanvas();
+            game.OnTick += logic;
+        });
+        async void logic()
+        {
+            var current = CalculateCurrentProjectilePosition(direction, initialPosition);
+            // Update the object's position
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                projectile.TeleportTo(current);
+            });
+
+            var distX = direction.X - current.X;
+            var distY = direction.Y - current.Y;
+            // Check if the object has reached the end position
+            float distanceRemaining = (float)Math.Sqrt(distX * distX + distY * distY);
+
+            if (distanceRemaining < Constants.ProjectileDistPerTick)
+            {
+                game.OnTick -= logic; //TODO: destroy projectile when it hits something
+            }
+            else
+            {
+                // Update the current position as the new start position
+                initialPosition = new Vector2(current.X, current.Y);
+            }
+        };
+        
+    }
+
+    private Vector2 CalculateCurrentProjectilePosition(Vector2 endPosition, Vector2 startPosition)
+    {       
+        // Calculate the direction vector from start to end
+        float dx = endPosition.X - startPosition.X;
+        float dy = endPosition.Y - startPosition.Y;
+        // Calculate the length of the direction vector
+        float length = (float)Math.Sqrt(dx * dx + dy * dy);
+        // Normalize the direction vector
+        if (length > 0)
+        {
+            dx /= length;
+            dy /= length;
+        }
+        // Calculate the new position
+        float currentX = startPosition.X + dx * Constants.ProjectileDistPerTick;
+        float currentY = startPosition.Y + dy * Constants.ProjectileDistPerTick;
+        return new Vector2(currentX, currentY);
     }
 
     public async Task CheckForObjectCollision(PlayerPixel currentPlayer)

@@ -3,20 +3,16 @@ using game_client.Socket;
 using game_client.Views;
 using System;
 using Avalonia.Input;
+using shared;
 
 namespace game_client.Models
 {
     public class GameFacade
     {
         private readonly MainWindow _mainWindow;
-        private readonly SocketService _socketService;
-        private readonly Game _game;
-
         public GameFacade(MainWindow mainWindow)
         {
             _mainWindow = mainWindow;
-            _socketService = SocketService.GetInstance();
-            _game = new Game();
         }
 
         public void JoinAndStartGame(string name)
@@ -24,6 +20,9 @@ namespace game_client.Models
             if (string.IsNullOrEmpty(name))
                 return;
 
+            var _socketService = SocketService.GetInstance();
+            var _game = Game.GetInstance();
+            
             // Reset the coin count and update the coin counter
             _socketService.ResetCoinCount();
             _socketService.UpdateCoinCounter();
@@ -55,5 +54,13 @@ namespace game_client.Models
         {
             InputHandler.RemoveKey(key);
         }
+
+        public async void SendShootingCords(Vector2 position)
+        {
+            var _socketService = SocketService.GetInstance();
+            await _socketService.OnCurrentPlayerShoot(position);
+        }
+
+
     }
 }

@@ -11,4 +11,5 @@ public class Constants
 
     //increment of how much a player moves onClick. This is temp.
     public const int MoveStep = 6;
+    public const int ProjectileDistPerTick = 15;
 }
