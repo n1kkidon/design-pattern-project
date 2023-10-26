@@ -60,7 +60,6 @@ public class SocketService
         string[] difficulties = new[] { "EasySoldier", "HardSoldier", "EasyKnight", "HardKnight" };
         foreach (var difficulty in difficulties)
         {
-            var enemyPixel = enemyFactory.CreateEnemyPixel(difficulty, $"{difficulty}", Color.FromRgb(255, 0, 0), new Vector2(400, 300));
             await socket.SendAsync("AddEntityToLobby", $"{difficulty}", new RGB(255, 0, 0), EntityType.ENEMY);
         }
     }

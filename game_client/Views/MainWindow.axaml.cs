@@ -18,56 +18,31 @@ public partial class MainWindow : Window
         _instance ??= new();
         return _instance;
     }
-    public MainWindow() //this will be private when the IDE preview window is no longer needed
+    private readonly GameFacade _gameFacade;
+
+    public MainWindow()
     {
         InitializeComponent();
+        _gameFacade = new GameFacade(this);
     }
 
     private void OnJoinButtonClick(object sender, RoutedEventArgs e)
     {
         var name = nameField.Text;
-        if (name == null)
-            return;
-
-        // Reset the coin count and update the coin counter
-        SocketService.GetInstance().ResetCoinCount();
-        SocketService.GetInstance().UpdateCoinCounter();
-
+        _gameFacade.JoinAndStartGame(name);
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
-
-        // Generate a random System.Drawing.Color
-        Random rnd = new Random();
-        System.Drawing.Color randomDrawingColor = System.Drawing.Color.FromArgb(
-            rnd.Next(256), rnd.Next(256), rnd.Next(256));
-
-        Avalonia.Media.Color randomAvaloniaColor = ColorAdapter.ToAvaloniaColor(randomDrawingColor);
-
-        var socketService = SocketService.GetInstance();
-        socketService.JoinGameLobby(name, randomAvaloniaColor).Wait();
-
-        socketService.AddOpponentToGame().Wait();
-
-        var game = new Game(); //tickrate
-        //keymaps
-        InputHandler.SetCommand(Key.W, new MoveUpCommand(false, game));
-        InputHandler.SetCommand(Key.A, new MoveLeftCommand(false, game));
-        InputHandler.SetCommand(Key.S, new MoveDownCommand(false, game));
-        InputHandler.SetCommand(Key.D, new MoveRightCommand(false, game));
-
-        
-        game.Start();
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
-        InputHandler.AddKey(e.Key);
+        _gameFacade.HandleKeyDown(e.Key);
         base.OnKeyUp(e);
     }
 
     protected override void OnKeyUp(KeyEventArgs e)
     {
-        InputHandler.RemoveKey(e.Key);
+        _gameFacade.HandleKeyUp(e.Key);
         base.OnKeyUp(e);
     }
 }
