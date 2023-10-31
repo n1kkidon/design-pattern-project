@@ -21,6 +21,8 @@ public class SocketService
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
 
+    Projectile originalProjectile = new Projectile(new Vector2(0, 0), Colors.White);
+
     private int coinCount;
 
     private SocketService()
@@ -34,6 +36,7 @@ public class SocketService
         socket.On("UpdateEntityPositionInClient", (Vector2 d, string uuid) => UpdateEntityPositionInClient(d, uuid));
         socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
         socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition) => UpdateOnProjectileInClient(direction, initialPosition));
+
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
@@ -102,10 +105,17 @@ public class SocketService
     {
         var game = Game.GetInstance();
         Projectile projectile;
+
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
-            projectile = new Projectile(initialPosition);
+            projectile = originalProjectile.Clone() as Projectile;
+            Projectile shallowProjectile = originalProjectile.ShallowClone() as Projectile; // cia laikina, nes reikės ataskaitai
             projectile.AddObjectToCanvas();
+
+            Console.WriteLine($"Original Hash Code: {originalProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai 
+            Console.WriteLine($"Deep copy Hash Code: {projectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
+            Console.WriteLine($"Shallow Hash Code: {shallowProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
+
             game.OnTick += logic;
         });
         async void logic()

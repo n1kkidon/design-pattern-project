@@ -4,18 +4,37 @@ using shared;
 
 namespace game_client.Models;
 
-public class Projectile : GameObject
+public class Projectile : GameObject, ICloneable
 {
     private Ellipse Shape;
 
-    public Projectile(Vector2 location) : base(location)
+    public Color Color {
+        get => ((SolidColorBrush)Shape.Fill).Color;
+        set => Shape.Fill = new SolidColorBrush(value);
+    }
+    public Projectile(Vector2 location, Color color) : base(location)
     {
         Shape = new Ellipse
         {
-            Fill = new SolidColorBrush(Colors.White),
+            Fill = new SolidColorBrush(color),
             Width = 8,
             Height = 8
         };
         AddToStackPanel(Shape);
     }
+
+    public ICloneable Clone() {
+        return new Projectile(this.Location, Colors.Red);
+    }
+
+    public ICloneable ShallowClone() {
+        return (ICloneable)this.MemberwiseClone();
+    }
+    public ICloneable DeepCopy() {
+        var clone = new Projectile(this.Location, Colors.Red) {
+    };
+        return clone;
+    }
+
+
 }
