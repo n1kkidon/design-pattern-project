@@ -79,14 +79,12 @@ public class SocketService
 private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
 {
     Dispatcher.UIThread.Invoke(() => {
-        Console.WriteLine($"Adding entity to lobby: {entityInfo.EntityType}");
 
         GameObject entity;
         
         // Check if the entity to be added is an Obstacle
         if (entityInfo.EntityType == EntityType.OBSTACLE)
         {
-            Console.WriteLine("Creating an Obstacle at " + entityInfo.Location);
             // Create an Obstacle instance
             var obstacle = new Obstacle(entityInfo.Location);
             
@@ -95,15 +93,12 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
         }
         else
         {
-            // For other entity types, use the factory as before
             entity = factory.CreateCanvasObject(entityInfo);
         }
-
         entity.AddObjectToCanvas();
         CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
     });
 }
-
 
     private void RemoveObjectFromCanvas(string uuid)
     {

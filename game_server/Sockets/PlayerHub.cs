@@ -20,9 +20,9 @@ public class PlayerHub : Hub
     var info = new CanvasObjectInfo
     {
         EntityType = EntityType.OBSTACLE,
-        // Assuming obstacles don't need a name or color, but adjust as necessary
+        
         Name = "Obstacle",
-        Color = new RGB(128, 128, 128), // Placeholder color, adjust as necessary
+        Color = new RGB(128, 128, 128), 
         Uuid = Guid.NewGuid().ToString(),
         Location = new Vector2(rnd.Next((int)(Constants.MapWidth * 0.9)),
                                rnd.Next((int)(Constants.MapHeight * 0.9)))
