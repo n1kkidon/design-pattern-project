@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Threading;
+using game_client.AbstractFactory;
 using game_client.Models;
 using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -13,7 +15,6 @@ namespace game_client.Socket;
 public class SocketService
 {
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
-    private AbstractEnemyFactory enemyFactory = new BasicEnemyFactory();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
 
@@ -57,12 +58,35 @@ public class SocketService
     }
     public async Task AddOpponentToGame()
     {
-        string[] difficulties = new[] { "EasySoldier", "HardSoldier", "EasyKnight", "HardKnight" };
-        foreach (var difficulty in difficulties)
+        var enemyCombinations = new List<(string difficulty, string enemyType)>{
+            ("Easy", "Soldier"),
+            ("Hard", "Soldier"),
+            ("Easy", "Knight"),
+            ("Hard", "Knight")
+        };
+
+        foreach (var combo in enemyCombinations)
         {
-            await socket.SendAsync("AddEntityToLobby", $"{difficulty}", new RGB(255, 0, 0), EntityType.ENEMY);
+            AbstractEnemyFactory enemyFactory = combo.difficulty switch
+            {
+                "Easy" => new EasyEnemyFactory(),
+                "Hard" => new HardEnemyFactory()
+            };
+
+            var enemyPixel = enemyFactory.CreateEnemyPixel(combo.enemyType, ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), new Vector2());
+            var enemyStats = enemyFactory.CreateEnemyStats(combo.enemyType);
+
+            await socket.SendAsync("AddEntityToLobby", $"{combo.difficulty}{combo.enemyType}", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY);
+
+            // We can send stats, pixel to anywhere else, in order to interact. Maybe adjust CanvasObjectInfo.cs, to take in health/damage.
+
+            if (enemyStats.Health > 150)
+            {
+                Console.WriteLine($"Spawned insane monster - {combo.difficulty}{combo.enemyType} - Health: {enemyStats.Health}, Damage: {enemyStats.Damage}");
+            }
         }
     }
+
     private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
     {
         Dispatcher.UIThread.Invoke(() => {
@@ -137,4 +161,10 @@ public class SocketService
     {
         coinCount = 0; // Reset the coin count
     }
+
+    public Avalonia.Media.Color ConvertRGBToAvaloniaColor(RGB rgb)
+    {
+        return Avalonia.Media.Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
+    }
+
 }
