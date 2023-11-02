@@ -17,9 +17,6 @@ namespace game_client.Models
 
         public void JoinAndStartGame(string name)
         {
-            if (string.IsNullOrEmpty(name))
-                return;
-
             var _socketService = SocketService.GetInstance();
             var _game = Game.GetInstance();
             

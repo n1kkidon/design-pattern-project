@@ -22,23 +22,30 @@ public partial class MainWindow : Window
         return _instance;
     }
     private readonly GameFacade _gameFacade;
+    private bool gameStarted;
 
     public MainWindow()
     {
         InitializeComponent();
         _gameFacade = new GameFacade(this);
+        gameStarted = false;
     }
 
     private void OnJoinButtonClick(object sender, RoutedEventArgs e)
     {
         var name = nameField.Text;
+        if (string.IsNullOrEmpty(name))
+            return;
         _gameFacade.JoinAndStartGame(name);
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
+        gameStarted = true;
     }
 
     private void OnMouseClick(object sender, PointerPressedEventArgs e)
     {
+        if(!gameStarted)
+            return;
         var clickPos = e.GetPosition(canvas);
         var position = new Vector2((float)clickPos.X, Constants.MapHeight-(float)clickPos.Y); //TODO: move this to adapter class
         
