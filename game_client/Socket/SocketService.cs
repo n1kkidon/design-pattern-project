@@ -10,6 +10,7 @@ using game_client.Models;
 using game_client.Views;
 using shared;
 using game_client.Builder;
+using game_client.Bridge;
 
 namespace game_client.Socket;
 
@@ -86,7 +87,6 @@ public class SocketService
                 "Easy" => new EasyEnemyFactory(),
                 "Hard" => new HardEnemyFactory()
             };
-
             var enemyPixel = enemyFactory.CreateEnemyPixel(combo.enemyType, ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), new Vector2());
             var enemyStats = enemyFactory.CreateEnemyStats(combo.enemyType);
 
