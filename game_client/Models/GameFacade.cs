@@ -81,8 +81,6 @@ namespace game_client.Models
                         break;
                     }
             }
-
-            Console.WriteLine("PRAEITAS ALGO");
         }
         public void HandleKeyDown(Key key)
         {
@@ -96,8 +94,6 @@ namespace game_client.Models
 
         public void SendShootingCords(IVector2 position)
         {
-            Console.WriteLine("Shooting blet");
-            Console.WriteLine("Shooting with: " + currentWeapon);
             currentPlayer.Shoot(position);
         }
     }
