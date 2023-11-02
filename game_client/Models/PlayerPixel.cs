@@ -5,6 +5,7 @@ using Avalonia.Media;
 using game_client.Observer;
 using shared;
 using System.Collections.Generic;
+using game_client.Socket;
 
 namespace game_client.Models;
 
@@ -13,6 +14,8 @@ public class PlayerPixel : GameObject, ISubject
     private TextBlock NameTag;
     private Rectangle Pixel;
     private Rectangle HealthBar;
+    private ShootAlgorithm _shootAlgorithm;
+    SocketService _socketService = SocketService.GetInstance();
 
     private int health = 10;
 
@@ -20,6 +23,7 @@ public class PlayerPixel : GameObject, ISubject
 
     public PlayerPixel(string name, Color color, Vector2 location) : base(location)
     {
+        _shootAlgorithm = new Pistol(_socketService); 
         NameTag = new()
         {
             Foreground = new SolidColorBrush(Colors.White),
@@ -54,6 +58,22 @@ public class PlayerPixel : GameObject, ISubject
             health--;
             NotifyObservers();
         }
+    }
+
+    public void SetShootingAlgorithm(ShootAlgorithm shootAlgo)
+    {
+        _shootAlgorithm = shootAlgo;
+    }
+
+    // Method to get the current shooting algorithm
+    public ShootAlgorithm GetShootAlgorithm()
+    {
+        return _shootAlgorithm;
+    }
+
+    public async void Shoot(IVector2 position)
+    {
+        await _shootAlgorithm.Shoot(position);
     }
 
     public void RegisterObserver(IObserver observer)

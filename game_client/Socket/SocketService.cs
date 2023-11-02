@@ -9,16 +9,21 @@ using game_client.AbstractFactory;
 using game_client.Models;
 using game_client.Views;
 using shared;
+using game_client.Builder;
 
 namespace game_client.Socket;
 
 public class SocketService
 {
+    public event Action<PlayerPixel> OnPlayerCreated;
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
+    private WeaponType _weaponType = WeaponType.HANDS;
+    IProjectileBuilder builder = new ProjectileBuilder();
+    ProjectileDirector director = new ProjectileDirector();
 
-    Projectile originalProjectile = new Projectile(new Vector2(0, 0), Colors.White);
+    Projectile originalProjectile;
 
     private int coinCount;
 
@@ -32,7 +37,7 @@ public class SocketService
         socket.On("AddEntityToLobbyClient", (CanvasObjectInfo p) => AddEntityToLobbyClient(p));
         socket.On("UpdateEntityPositionInClient", (Vector2 d, string uuid) => UpdateEntityPositionInClient(d, uuid));
         socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
-        socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition) => UpdateOnProjectileInClient(direction, initialPosition));
+        socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition, string weaponType) => UpdateOnProjectileInClient(direction, initialPosition, weaponType));
 
 
         socket.StartAsync().Wait();
@@ -50,9 +55,9 @@ public class SocketService
         instance ??= new();
         return instance;
     }
-    public async Task OnCurrentPlayerShoot(IVector2 direction)
+    public async Task OnCurrentPlayerShoot(IVector2 direction, WeaponType weaponType)
     {
-        await socket.InvokeAsync("ProjectileShot", direction.ToVector2());
+        await socket.InvokeAsync("ProjectileShot", direction.ToVector2(), weaponType.ToString());
     }
 
     public async Task OnCurrentPlayerMove(Vector2 direction)
@@ -60,10 +65,10 @@ public class SocketService
         await socket.InvokeAsync("EntityMoved", direction);
     }
 
-    public async Task JoinGameLobby(string name, Color color) //this goes through backend, which calls the AddPlayerToLobby() below
+    public async Task JoinGameLobby(string name, Color color, WeaponType weaponType) //this goes through backend, which calls the AddPlayerToLobby() below
     {
-       await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER);
        await socket.SendAsync("AddObstacleToGame");
+       await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER, weaponType);
     }
     public async Task AddOpponentToGame()
     {
@@ -85,7 +90,7 @@ public class SocketService
             var enemyPixel = enemyFactory.CreateEnemyPixel(combo.enemyType, ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), new Vector2());
             var enemyStats = enemyFactory.CreateEnemyStats(combo.enemyType);
 
-            await socket.SendAsync("AddEntityToLobby", $"{combo.difficulty}{combo.enemyType}", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY);
+            await socket.SendAsync("AddEntityToLobby", $"{combo.difficulty}{combo.enemyType}", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
 
             // We can send stats, pixel to anywhere else, in order to interact. Maybe adjust CanvasObjectInfo.cs, to take in health/damage.
 
@@ -115,6 +120,10 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
         {
             entity = factory.CreateCanvasObject(entityInfo);
         }
+        if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
+        {
+            OnPlayerCreated?.Invoke(playerPixel);
+        }
         entity.AddObjectToCanvas();
         CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
     });
@@ -136,18 +145,47 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
         });
     }
 
-    private async void UpdateOnProjectileInClient(Vector2 direction, Vector2 initialPosition) //TODO: change direction from click location to final (colide) location
+    private async void UpdateOnProjectileInClient(Vector2 direction, Vector2 initialPosition, string weaponType) //TODO: change direction from click location to final (colide) location
     {
         var game = Game.GetInstance();
         Projectile projectile;
+        Projectile projectileForAll;
 
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
-            projectile = originalProjectile.Clone() as Projectile;
-            Projectile shallowProjectile = originalProjectile.ShallowClone() as Projectile; // cia laikina, nes reikės ataskaitai
+            switch (weaponType)
+            {
+                case "PISTOL":
+                    {
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
+                        break;
+                    }
+                case "SNIPER":
+                    {
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.Red, 6, 6);
+                        break;
+                    }
+                case "ROCKET":
+                    {
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.OrangeRed, 15, 15);
+                        break;
+                    }
+                case "CANNON":
+                    {
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.Cyan, 30, 30);
+                        break;
+                    }
+                default:
+                    {
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
+                        break;
+                    }
+            }
+            projectile = projectileForAll.Clone() as Projectile;
+            Projectile shallowProjectile = projectileForAll.ShallowClone() as Projectile; // cia laikina, nes reikės ataskaitai
             projectile.AddObjectToCanvas();
 
-            Console.WriteLine($"Original Hash Code: {originalProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai 
+            Console.WriteLine($"Original Hash Code: {projectileForAll.GetHashCode()}"); // cia laikina, nes reikės ataskaitai 
             Console.WriteLine($"Deep copy Hash Code: {projectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
             Console.WriteLine($"Shallow Hash Code: {shallowProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
 
@@ -241,6 +279,45 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
             var mainWindow = MainWindow.GetInstance();
             mainWindow.coinCounter.Text = $"Coins: {coinCount}";
         });
+    }
+
+    public void setWeaponProjectiles(WeaponType weapon)
+    {
+        if (weapon.ToString() == _weaponType.ToString()) return;
+        Console.WriteLine(weapon.ToString());
+        switch (weapon)
+        {
+            case WeaponType.PISTOL:
+                {
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
+                    _weaponType = WeaponType.PISTOL;
+                    break;
+                }
+            case WeaponType.SNIPER:
+                {
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.Red, 6, 6);
+                    _weaponType = WeaponType.SNIPER;
+                    break;
+                }
+            case WeaponType.ROCKET:
+                {
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.OrangeRed, 15, 15);
+                    _weaponType = WeaponType.ROCKET;
+                    break;
+                }
+            case WeaponType.CANNON:
+                {
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.Cyan, 30, 30);
+                    _weaponType = WeaponType.CANNON;
+                    break;
+                }
+            default:
+                {
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
+                    break;
+                }
+        }
+        
     }
 
     public void ResetCoinCount()

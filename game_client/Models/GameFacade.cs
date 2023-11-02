@@ -10,13 +10,20 @@ namespace game_client.Models
     public class GameFacade
     {
         private readonly MainWindow _mainWindow;
+        private WeaponType currentWeapon;
+        private PlayerPixel currentPlayer;
         public GameFacade(MainWindow mainWindow)
         {
             _mainWindow = mainWindow;
         }
 
-        public void JoinAndStartGame(string name)
+        public void JoinAndStartGame(string name, WeaponType selectedWeapon)
         {
+            if (string.IsNullOrEmpty(name))
+                return;
+            Console.WriteLine("BLED");
+            Console.WriteLine(selectedWeapon + "chachahc");
+            currentWeapon = selectedWeapon;
             var _socketService = SocketService.GetInstance();
             var _game = Game.GetInstance();
             
@@ -30,7 +37,7 @@ namespace game_client.Models
                 rnd.Next(256), rnd.Next(256), rnd.Next(256));
             Avalonia.Media.Color randomAvaloniaColor = ColorAdapter.ToAvaloniaColor(randomDrawingColor);
 
-            _socketService.JoinGameLobby(name, randomAvaloniaColor).Wait();
+            _socketService.JoinGameLobby(name, randomAvaloniaColor, currentWeapon).Wait();
             _socketService.AddOpponentToGame().Wait();
 
             //keymaps
@@ -41,7 +48,42 @@ namespace game_client.Models
 
             _game.Start();
         }
+        public void SetCurrentPlayer(PlayerPixel player, WeaponType weaponType)
+        {
+            Console.WriteLine("Current weapon is: " + weaponType);
+            var _socketService = SocketService.GetInstance();
+            currentPlayer = player;
+            switch (weaponType)
+            {
+                case WeaponType.PISTOL:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Pistol(_socketService));
+                        break;
+                    }
+                case WeaponType.ROCKET:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Rocket(_socketService));
+                        break;
+                    }
+                case WeaponType.SNIPER:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Sniper(_socketService));
+                        break;
+                    }
+                case WeaponType.CANNON:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Cannon(_socketService));
+                        break;
+                    }
+                default:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Pistol(_socketService));
+                        break;
+                    }
+            }
 
+            Console.WriteLine("PRAEITAS ALGO");
+        }
         public void HandleKeyDown(Key key)
         {
             InputHandler.AddKey(key);
@@ -52,12 +94,11 @@ namespace game_client.Models
             InputHandler.RemoveKey(key);
         }
 
-        public async void SendShootingCords(IVector2 position)
+        public void SendShootingCords(IVector2 position)
         {
-            var _socketService = SocketService.GetInstance();
-            await _socketService.OnCurrentPlayerShoot(position);
+            Console.WriteLine("Shooting blet");
+            Console.WriteLine("Shooting with: " + currentWeapon);
+            currentPlayer.Shoot(position);
         }
-
-
     }
 }

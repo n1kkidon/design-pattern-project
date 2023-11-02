@@ -9,7 +9,12 @@
         Width="800">
         
         <Canvas Name="canvas" Background="#0a0a0a" PointerPressed="OnMouseClick">
-
+			    <StackPanel Name="weaponSelectionPanel" Orientation="Horizontal" HorizontalAlignment="Left" Canvas.Top="100" Canvas.Left="250">
+				    <RadioButton Content="Pistol" GroupName="Weapons" IsChecked="True" Foreground="White" Checked="OnWeaponChanged"/>
+				    <RadioButton Content="Sniper" GroupName="Weapons" Foreground="White" Checked="OnWeaponChanged"/>
+				    <RadioButton Content="Rocket" GroupName="Weapons" Foreground="White" Checked="OnWeaponChanged"/>
+				    <RadioButton Content="Cannon" GroupName="Weapons" Foreground="White" Checked="OnWeaponChanged"/>
+			    </StackPanel>
                 <TextBox Width="100" 
                         Height="40" 
                         Watermark="Name" 

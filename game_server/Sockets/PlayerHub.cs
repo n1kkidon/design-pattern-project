@@ -2,14 +2,12 @@ using System.Collections.Concurrent;
 using game_server.Services;
 using Microsoft.AspNetCore.SignalR;
 using shared;
-
 namespace game_server.Sockets;
 public class PlayerHub : Hub
 {
     public static readonly ConcurrentDictionary<string, CanvasObjectInfo> CurrentCanvasItems = new();
     private static readonly Random rnd = new();
     private readonly CoinBackgroundService _coinService;
-
     public PlayerHub(CoinBackgroundService coinService)
     {
         _coinService = coinService;
@@ -32,7 +30,7 @@ public class PlayerHub : Hub
     await Clients.All.SendAsync("AddEntityToLobbyClient", info);
     }
 
-    public async Task AddEntityToLobby(string name, RGB color, EntityType entityType)
+    public async Task AddEntityToLobby(string name, RGB color, EntityType entityType, WeaponType weaponType)
     {   
         var info = new CanvasObjectInfo{
             EntityType = entityType,
@@ -40,7 +38,8 @@ public class PlayerHub : Hub
             Name = name,
             Uuid = entityType == EntityType.PLAYER ? Context.ConnectionId : Guid.NewGuid().ToString(),
             Location = new(rnd.Next((int)(Constants.MapWidth*0.9)),
-                rnd.Next((int)(Constants.MapHeight*0.9)))
+                rnd.Next((int)(Constants.MapHeight*0.9))),
+            WeaponType = weaponType
         };
         var freshJoined = CurrentCanvasItems.TryAdd(info.Uuid, info);
         var existingEntities = CurrentCanvasItems.Values.ToList();
@@ -53,10 +52,10 @@ public class PlayerHub : Hub
         else await Clients.Caller.SendAsync("AddEntityToLobbyClient", info);
     }
 
-    public async Task ProjectileShot(Vector2 direction)
+    public async Task ProjectileShot(Vector2 direction, string weaponType)
     {
         var playerInfo = CurrentCanvasItems[Context.ConnectionId];
-        await Clients.All.SendAsync("UpdateOnProjectileInClient", direction, playerInfo.Location);
+        await Clients.All.SendAsync("UpdateOnProjectileInClient", direction, playerInfo.Location, weaponType);
     }
     public async Task EntityMoved(Vector2 moveDirection)
     {
