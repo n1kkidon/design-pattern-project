@@ -187,7 +187,6 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
 
             game.OnTick += logic;
         });
-        Console.WriteLine("DAEINAM CIA?");
         async void logic()
         {
             var current = CalculateCurrentProjectilePosition(direction, initialPosition);

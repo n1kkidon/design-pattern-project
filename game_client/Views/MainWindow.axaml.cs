@@ -58,9 +58,7 @@ public partial class MainWindow : Window
     }
     private void HandlePlayerCreated(PlayerPixel player)
     {
-        Console.WriteLine("Setting new player");
         _gameFacade.SetCurrentPlayer(player, _weaponType);
-        Console.WriteLine("Finished setting");
     }
     protected override void OnKeyDown(KeyEventArgs e)
     {

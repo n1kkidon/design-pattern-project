@@ -41,7 +41,6 @@ public class PlayerHub : Hub
                 rnd.Next((int)(Constants.MapHeight*0.9))),
             WeaponType = weaponType
         };
-        Console.WriteLine(weaponType);
         var freshJoined = CurrentCanvasItems.TryAdd(info.Uuid, info);
         var existingEntities = CurrentCanvasItems.Values.ToList();
         await Clients.Others.SendAsync("AddEntityToLobbyClient", info); //player is displayed for other online clients
