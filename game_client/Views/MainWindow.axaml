@@ -8,7 +8,7 @@
         Height="500"
         Width="800">
         
-        <Canvas Name="canvas" Background="#0a0a0a">
+        <Canvas Name="canvas" Background="#0a0a0a" PointerPressed="OnMouseClick">
 
                 <TextBox Width="100" 
                         Height="40" 

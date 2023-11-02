@@ -15,6 +15,23 @@ public class PlayerHub : Hub
         _coinService = coinService;
     }
 
+    public async Task AddObstacleToGame()
+    {
+    var info = new CanvasObjectInfo
+    {
+        EntityType = EntityType.OBSTACLE,
+        
+        Name = "Obstacle",
+        Color = new RGB(128, 128, 128), 
+        Uuid = Guid.NewGuid().ToString(),
+        Location = new Vector2(rnd.Next((int)(Constants.MapWidth * 0.9)),
+                               rnd.Next((int)(Constants.MapHeight * 0.9)))
+    };
+
+    CurrentCanvasItems.TryAdd(info.Uuid, info);
+    await Clients.All.SendAsync("AddEntityToLobbyClient", info);
+    }
+
     public async Task AddEntityToLobby(string name, RGB color, EntityType entityType)
     {   
         var info = new CanvasObjectInfo{
@@ -36,7 +53,11 @@ public class PlayerHub : Hub
         else await Clients.Caller.SendAsync("AddEntityToLobbyClient", info);
     }
 
-
+    public async Task ProjectileShot(Vector2 direction)
+    {
+        var playerInfo = CurrentCanvasItems[Context.ConnectionId];
+        await Clients.All.SendAsync("UpdateOnProjectileInClient", direction, playerInfo.Location);
+    }
     public async Task EntityMoved(Vector2 moveDirection)
     {
         var playerInfo = CurrentCanvasItems[Context.ConnectionId];

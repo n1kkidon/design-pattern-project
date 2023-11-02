@@ -1,13 +1,16 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
 using game_client.AbstractFactory;
 using game_client.Models;
 using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using shared;
 
 namespace game_client.Socket;
@@ -17,6 +20,8 @@ public class SocketService
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
+
+    Projectile originalProjectile = new Projectile(new Vector2(0, 0), Colors.White);
 
     private int coinCount;
 
@@ -30,6 +35,8 @@ public class SocketService
         socket.On("AddEntityToLobbyClient", (CanvasObjectInfo p) => AddEntityToLobbyClient(p));
         socket.On("UpdateEntityPositionInClient", (Vector2 d, string uuid) => UpdateEntityPositionInClient(d, uuid));
         socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
+        socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition) => UpdateOnProjectileInClient(direction, initialPosition));
+
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
@@ -46,6 +53,10 @@ public class SocketService
         instance ??= new();
         return instance;
     }
+    public async Task OnCurrentPlayerShoot(Vector2 direction)
+    {
+        await socket.InvokeAsync("ProjectileShot", direction);
+    }
 
     public async Task OnCurrentPlayerMove(Vector2 direction)
     {
@@ -55,6 +66,7 @@ public class SocketService
     public async Task JoinGameLobby(string name, Color color) //this goes through backend, which calls the AddPlayerToLobby() below
     {
        await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER);
+       await socket.SendAsync("AddObstacleToGame");
     }
     public async Task AddOpponentToGame()
     {
@@ -87,15 +99,29 @@ public class SocketService
         }
     }
 
-    private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
-    {
-        Dispatcher.UIThread.Invoke(() => {
-            var entity = factory.CreateCanvasObject(entityInfo);
-            entity.AddObjectToCanvas();
-            CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
-        });
-    }
+private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
+{
+    Dispatcher.UIThread.Invoke(() => {
 
+        GameObject entity;
+        
+        // Check if the entity to be added is an Obstacle
+        if (entityInfo.EntityType == EntityType.OBSTACLE)
+        {
+            // Create an Obstacle instance
+            var obstacle = new Obstacle(entityInfo.Location);
+            
+            // Optionally decorate the Obstacle
+            entity = new IndestructibleObstacleDecorator(obstacle);
+        }
+        else
+        {
+            entity = factory.CreateCanvasObject(entityInfo);
+        }
+        entity.AddObjectToCanvas();
+        CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
+    });
+}
     private void RemoveObjectFromCanvas(string uuid)
     {
         CurrentCanvasObjects.TryRemove(uuid, out var entity);
@@ -111,6 +137,69 @@ public class SocketService
             playerpxl.TeleportTo(direction);
             await CheckForObjectCollision((PlayerPixel)playerpxl);
         });
+    }
+
+    private async void UpdateOnProjectileInClient(Vector2 direction, Vector2 initialPosition) //TODO: change direction from click location to final (colide) location
+    {
+        var game = Game.GetInstance();
+        Projectile projectile;
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            projectile = originalProjectile.Clone() as Projectile;
+            Projectile shallowProjectile = originalProjectile.ShallowClone() as Projectile; // cia laikina, nes reikės ataskaitai
+            projectile.AddObjectToCanvas();
+
+            Console.WriteLine($"Original Hash Code: {originalProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai 
+            Console.WriteLine($"Deep copy Hash Code: {projectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
+            Console.WriteLine($"Shallow Hash Code: {shallowProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
+
+            game.OnTick += logic;
+        });
+        async void logic()
+        {
+            var current = CalculateCurrentProjectilePosition(direction, initialPosition);
+            // Update the object's position
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                projectile.TeleportTo(current);
+            });
+
+            var distX = direction.X - current.X;
+            var distY = direction.Y - current.Y;
+            // Check if the object has reached the end position
+            float distanceRemaining = (float)Math.Sqrt(distX * distX + distY * distY);
+
+            if (distanceRemaining < Constants.ProjectileDistPerTick)
+            {
+                game.OnTick -= logic; //TODO: destroy projectile when it hits something
+            }
+            else
+            {
+                // Update the current position as the new start position
+                initialPosition = new Vector2(current.X, current.Y);
+            }
+        };
+        
+    }
+
+    private Vector2 CalculateCurrentProjectilePosition(Vector2 endPosition, Vector2 startPosition)
+    {       
+        // Calculate the direction vector from start to end
+        float dx = endPosition.X - startPosition.X;
+        float dy = endPosition.Y - startPosition.Y;
+        // Calculate the length of the direction vector
+        float length = (float)Math.Sqrt(dx * dx + dy * dy);
+        // Normalize the direction vector
+        if (length > 0)
+        {
+            dx /= length;
+            dy /= length;
+        }
+        // Calculate the new position
+        float currentX = startPosition.X + dx * Constants.ProjectileDistPerTick;
+        float currentY = startPosition.Y + dy * Constants.ProjectileDistPerTick;
+        return new Vector2(currentX, currentY);
     }
 
     public async Task CheckForObjectCollision(PlayerPixel currentPlayer)

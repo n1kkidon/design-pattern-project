@@ -7,6 +7,9 @@ using Avalonia.Media;
 using game_client.Models;
 using game_client.Socket;
 using game_client.Adapters;
+using shared;
+using System.Security.Cryptography.X509Certificates;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace game_client.Views;
 
@@ -32,6 +35,14 @@ public partial class MainWindow : Window
         _gameFacade.JoinAndStartGame(name);
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
+    }
+
+    private void OnMouseClick(object sender, PointerPressedEventArgs e)
+    {
+        var clickPos = e.GetPosition(canvas);
+        var position = new Vector2((float)clickPos.X, Constants.MapHeight-(float)clickPos.Y); //TODO: move this to adapter class
+        
+        _gameFacade.SendShootingCords(position);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
