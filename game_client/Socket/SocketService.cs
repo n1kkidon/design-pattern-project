@@ -20,7 +20,7 @@ public class SocketService
     private AbstractEnemyFactory enemyFactory = new BasicEnemyFactory();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
-    private WeaponType _weaponType = WeaponType.PISTOL;
+    private WeaponType _weaponType = WeaponType.HANDS;
     Projectile originalProjectile;
 
     private int coinCount;
@@ -35,7 +35,7 @@ public class SocketService
         socket.On("AddEntityToLobbyClient", (CanvasObjectInfo p) => AddEntityToLobbyClient(p));
         socket.On("UpdateEntityPositionInClient", (Vector2 d, string uuid) => UpdateEntityPositionInClient(d, uuid));
         socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
-        socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition) => UpdateOnProjectileInClient(direction, initialPosition));
+        socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition, string weaponType) => UpdateOnProjectileInClient(direction, initialPosition, weaponType));
 
 
         socket.StartAsync().Wait();
@@ -53,9 +53,9 @@ public class SocketService
         instance ??= new();
         return instance;
     }
-    public async Task OnCurrentPlayerShoot(Vector2 direction)
+    public async Task OnCurrentPlayerShoot(Vector2 direction, WeaponType weaponType)
     {
-        await socket.InvokeAsync("ProjectileShot", direction);
+        await socket.InvokeAsync("ProjectileShot", direction, weaponType.ToString());
     }
 
     public async Task OnCurrentPlayerMove(Vector2 direction)
@@ -105,23 +105,53 @@ public class SocketService
         });
     }
 
-    private async void UpdateOnProjectileInClient(Vector2 direction, Vector2 initialPosition) //TODO: change direction from click location to final (colide) location
+    private async void UpdateOnProjectileInClient(Vector2 direction, Vector2 initialPosition, string weaponType) //TODO: change direction from click location to final (colide) location
     {
         var game = Game.GetInstance();
         Projectile projectile;
+        Projectile projectileForAll;
 
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
-            projectile = originalProjectile.Clone() as Projectile;
-            Projectile shallowProjectile = originalProjectile.ShallowClone() as Projectile; // cia laikina, nes reikės ataskaitai
+            switch (weaponType)
+            {
+                case "PISTOL":
+                    {
+                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.AliceBlue, 10, 10);
+                        break;
+                    }
+                case "SNIPER":
+                    {
+                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.Red, 6, 6);
+                        break;
+                    }
+                case "ROCKET":
+                    {
+                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.OrangeRed, 15, 15);
+                        break;
+                    }
+                case "CANNON":
+                    {
+                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.Cyan, 30, 30);
+                        break;
+                    }
+                default:
+                    {
+                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.Purple, 20, 20);
+                        break;
+                    }
+            }
+            projectile = projectileForAll.Clone() as Projectile;
+            Projectile shallowProjectile = projectileForAll.ShallowClone() as Projectile; // cia laikina, nes reikės ataskaitai
             projectile.AddObjectToCanvas();
 
-            Console.WriteLine($"Original Hash Code: {originalProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai 
+            Console.WriteLine($"Original Hash Code: {projectileForAll.GetHashCode()}"); // cia laikina, nes reikės ataskaitai 
             Console.WriteLine($"Deep copy Hash Code: {projectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
             Console.WriteLine($"Shallow Hash Code: {shallowProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
 
             game.OnTick += logic;
         });
+        Console.WriteLine("DAEINAM CIA?");
         async void logic()
         {
             var current = CalculateCurrentProjectilePosition(direction, initialPosition);

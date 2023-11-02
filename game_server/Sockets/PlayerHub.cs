@@ -38,11 +38,10 @@ public class PlayerHub : Hub
         else await Clients.Caller.SendAsync("AddEntityToLobbyClient", info);
     }
 
-    public async Task ProjectileShot(Vector2 direction)
+    public async Task ProjectileShot(Vector2 direction, string weaponType)
     {
         var playerInfo = CurrentCanvasItems[Context.ConnectionId];
-        Console.WriteLine(playerInfo.WeaponType);
-        await Clients.All.SendAsync("UpdateOnProjectileInClient", direction, playerInfo.Location);
+        await Clients.All.SendAsync("UpdateOnProjectileInClient", direction, playerInfo.Location, weaponType);
     }
     public async Task EntityMoved(Vector2 moveDirection)
     {

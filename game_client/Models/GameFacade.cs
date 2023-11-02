@@ -21,7 +21,6 @@ namespace game_client.Models
         {
             if (string.IsNullOrEmpty(name))
                 return;
-            Console.WriteLine("Selected weapon: " + selectedWeapon);
             currentWeapon = selectedWeapon;
             var _socketService = SocketService.GetInstance();
             var _game = Game.GetInstance();

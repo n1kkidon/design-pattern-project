@@ -26,7 +26,6 @@ public partial class MainWindow : Window
     private WeaponType _weaponType;
     public MainWindow()
     {
-        Console.SetOut(new StreamWriter("path_to_log_file.txt") { AutoFlush = true });
         InitializeComponent();
         _gameFacade = new GameFacade(this);
         var socketService = SocketService.GetInstance();

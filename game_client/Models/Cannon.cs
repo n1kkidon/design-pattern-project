@@ -16,7 +16,7 @@ namespace game_client.Models
         {
             // Implement shooting logic specific to a pistol
             socketService.setWeaponProjectiles(WeaponType.CANNON);
-            await socketService.OnCurrentPlayerShoot(position);
+            await socketService.OnCurrentPlayerShoot(position, WeaponType.CANNON);
         }
     }
 }
