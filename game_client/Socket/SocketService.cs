@@ -9,6 +9,7 @@ using game_client.AbstractFactory;
 using game_client.Models;
 using game_client.Views;
 using shared;
+using game_client.Builder;
 
 namespace game_client.Socket;
 
@@ -19,6 +20,9 @@ public class SocketService
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
     private WeaponType _weaponType = WeaponType.HANDS;
+    IProjectileBuilder builder = new ProjectileBuilder();
+    ProjectileDirector director = new ProjectileDirector();
+
     Projectile originalProjectile;
 
     private int coinCount;
@@ -153,27 +157,27 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
             {
                 case "PISTOL":
                     {
-                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.AliceBlue, 10, 10);
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
                         break;
                     }
                 case "SNIPER":
                     {
-                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.Red, 6, 6);
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.Red, 6, 6);
                         break;
                     }
                 case "ROCKET":
                     {
-                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.OrangeRed, 15, 15);
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.OrangeRed, 15, 15);
                         break;
                     }
                 case "CANNON":
                     {
-                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.Cyan, 30, 30);
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.Cyan, 30, 30);
                         break;
                     }
                 default:
                     {
-                        projectileForAll = new Projectile(new Vector2(0, 0), Colors.Purple, 20, 20);
+                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
                         break;
                     }
             }
@@ -285,31 +289,31 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
         {
             case WeaponType.PISTOL:
                 {
-                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.AliceBlue, 10, 10);
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
                     _weaponType = WeaponType.PISTOL;
                     break;
                 }
             case WeaponType.SNIPER:
                 {
-                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.Red, 6, 6);
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.Red, 6, 6);
                     _weaponType = WeaponType.SNIPER;
                     break;
                 }
             case WeaponType.ROCKET:
                 {
-                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.OrangeRed, 15, 15);
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.OrangeRed, 15, 15);
                     _weaponType = WeaponType.ROCKET;
                     break;
                 }
             case WeaponType.CANNON:
                 {
-                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.Cyan, 30, 30);
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.Cyan, 30, 30);
                     _weaponType = WeaponType.CANNON;
                     break;
                 }
             default:
                 {
-                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.Purple, 20, 20);
+                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
                     break;
                 }
         }
