@@ -9,7 +9,7 @@ using game_client.Socket;
 using game_client.Adapters;
 using shared;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Net.Sockets;
 
 namespace game_client.Views;
 
@@ -22,17 +22,20 @@ public partial class MainWindow : Window
         return _instance;
     }
     private readonly GameFacade _gameFacade;
-
+    private WeaponType _weaponType;
     public MainWindow()
     {
         InitializeComponent();
         _gameFacade = new GameFacade(this);
+        var socketService = SocketService.GetInstance();
+        socketService.OnPlayerCreated += HandlePlayerCreated;
     }
 
     private void OnJoinButtonClick(object sender, RoutedEventArgs e)
     {
         var name = nameField.Text;
-        _gameFacade.JoinAndStartGame(name);
+        _gameFacade.JoinAndStartGame(name, _weaponType);
+        weaponSelectionPanel.IsVisible = false;
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
     }
@@ -44,16 +47,28 @@ public partial class MainWindow : Window
         
         _gameFacade.SendShootingCords(position);
     }
-
+    private void HandlePlayerCreated(PlayerPixel player)
+    {
+        _gameFacade.SetCurrentPlayer(player);
+    }
     protected override void OnKeyDown(KeyEventArgs e)
     {
         _gameFacade.HandleKeyDown(e.Key);
         base.OnKeyUp(e);
     }
+    public void OnWeaponChanged(object? sender, RoutedEventArgs e)
+    {
+        if (sender is RadioButton radioButton && radioButton.IsChecked == true)
+        {
+            _weaponType = Enum.Parse<WeaponType>(radioButton.Content.ToString(), true);
+        }
+    }
+
 
     protected override void OnKeyUp(KeyEventArgs e)
     {
         _gameFacade.HandleKeyUp(e.Key);
         base.OnKeyUp(e);
     }
+
 }

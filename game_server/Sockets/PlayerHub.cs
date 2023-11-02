@@ -15,7 +15,7 @@ public class PlayerHub : Hub
         _coinService = coinService;
     }
 
-    public async Task AddEntityToLobby(string name, RGB color, EntityType entityType)
+    public async Task AddEntityToLobby(string name, RGB color, EntityType entityType, WeaponType weaponType)
     {   
         var info = new CanvasObjectInfo{
             EntityType = entityType,
@@ -23,8 +23,10 @@ public class PlayerHub : Hub
             Name = name,
             Uuid = entityType == EntityType.PLAYER ? Context.ConnectionId : Guid.NewGuid().ToString(),
             Location = new(rnd.Next((int)(Constants.MapWidth*0.9)),
-                rnd.Next((int)(Constants.MapHeight*0.9)))
+                rnd.Next((int)(Constants.MapHeight*0.9))),
+            WeaponType = weaponType
         };
+        Console.WriteLine(weaponType);
         var freshJoined = CurrentCanvasItems.TryAdd(info.Uuid, info);
         var existingEntities = CurrentCanvasItems.Values.ToList();
         await Clients.Others.SendAsync("AddEntityToLobbyClient", info); //player is displayed for other online clients
@@ -39,6 +41,7 @@ public class PlayerHub : Hub
     public async Task ProjectileShot(Vector2 direction)
     {
         var playerInfo = CurrentCanvasItems[Context.ConnectionId];
+        Console.WriteLine(playerInfo.WeaponType);
         await Clients.All.SendAsync("UpdateOnProjectileInClient", direction, playerInfo.Location);
     }
     public async Task EntityMoved(Vector2 moveDirection)

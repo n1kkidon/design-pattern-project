@@ -9,13 +9,13 @@ using Avalonia.Threading;
 using game_client.Models;
 using game_client.Views;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using shared;
 
 namespace game_client.Socket;
 
 public class SocketService
 {
+    public event Action<PlayerPixel> OnPlayerCreated;
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
     private AbstractEnemyFactory enemyFactory = new BasicEnemyFactory();
     private readonly HubConnection socket;
@@ -63,16 +63,16 @@ public class SocketService
         await socket.InvokeAsync("EntityMoved", direction);
     }
 
-    public async Task JoinGameLobby(string name, Color color) //this goes through backend, which calls the AddPlayerToLobby() below
+    public async Task JoinGameLobby(string name, Color color, WeaponType weaponType) //this goes through backend, which calls the AddPlayerToLobby() below
     {
-       await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER);
+       await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER, weaponType);
     }
     public async Task AddOpponentToGame()
     {
         string[] difficulties = new[] { "EasySoldier", "HardSoldier", "EasyKnight", "HardKnight" };
         foreach (var difficulty in difficulties)
         {
-            await socket.SendAsync("AddEntityToLobby", $"{difficulty}", new RGB(255, 0, 0), EntityType.ENEMY);
+            await socket.SendAsync("AddEntityToLobby", $"{difficulty}", new RGB(255, 0, 0), EntityType.ENEMY, WeaponType.HANDS);
         }
     }
     private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
@@ -81,6 +81,10 @@ public class SocketService
             var entity = factory.CreateCanvasObject(entityInfo);
             entity.AddObjectToCanvas();
             CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
+            if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
+            {
+                OnPlayerCreated?.Invoke(playerPixel);
+            }
         });
     }
 

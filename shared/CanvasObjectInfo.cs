@@ -7,6 +7,7 @@ public class CanvasObjectInfo
     public required string Uuid {get; set;}
     public RGB? Color {get; set;}
     public required EntityType EntityType {get; set;}
+    public WeaponType? WeaponType { get; set;}
 }
 
 public record RGB(byte R, byte G, byte B);
@@ -14,4 +15,8 @@ public record RGB(byte R, byte G, byte B);
 public enum EntityType
 {
     PLAYER, ENEMY, COIN
+}
+public enum WeaponType
+{
+    PISTOL, SNIPER, ROCKET, CANNON, HANDS
 }

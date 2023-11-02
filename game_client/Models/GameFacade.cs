@@ -10,16 +10,18 @@ namespace game_client.Models
     public class GameFacade
     {
         private readonly MainWindow _mainWindow;
+        private WeaponType currentWeapon;
+        private PlayerPixel currentPlayer;
         public GameFacade(MainWindow mainWindow)
         {
             _mainWindow = mainWindow;
         }
 
-        public void JoinAndStartGame(string name)
+        public void JoinAndStartGame(string name, WeaponType selectedWeapon)
         {
             if (string.IsNullOrEmpty(name))
                 return;
-
+            currentWeapon = selectedWeapon;
             var _socketService = SocketService.GetInstance();
             var _game = Game.GetInstance();
             
@@ -33,7 +35,7 @@ namespace game_client.Models
                 rnd.Next(256), rnd.Next(256), rnd.Next(256));
             Avalonia.Media.Color randomAvaloniaColor = ColorAdapter.ToAvaloniaColor(randomDrawingColor);
 
-            _socketService.JoinGameLobby(name, randomAvaloniaColor).Wait();
+            _socketService.JoinGameLobby(name, randomAvaloniaColor, currentWeapon).Wait();
             _socketService.AddOpponentToGame().Wait();
 
             //keymaps
@@ -44,7 +46,14 @@ namespace game_client.Models
 
             _game.Start();
         }
-
+        public void SetCurrentPlayer(PlayerPixel player)
+        {
+            currentPlayer = player;
+        }
+        public void setCurrentWeapon(WeaponType weapon)
+        {
+            currentWeapon = weapon;
+        }
         public void HandleKeyDown(Key key)
         {
             InputHandler.AddKey(key);
@@ -57,10 +66,7 @@ namespace game_client.Models
 
         public async void SendShootingCords(Vector2 position)
         {
-            var _socketService = SocketService.GetInstance();
-            await _socketService.OnCurrentPlayerShoot(position);
+            currentPlayer.Shoot(position);
         }
-
-
     }
 }

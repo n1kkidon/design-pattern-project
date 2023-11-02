@@ -22,6 +22,16 @@ public class Projectile : GameObject, ICloneable
         };
         AddToStackPanel(Shape);
     }
+    public Projectile(Vector2 location, Color color, int width, int height) : base(location)
+    {
+        Shape = new Ellipse
+        {
+            Fill = new SolidColorBrush(color),
+            Width = width,
+            Height = height
+        };
+        AddToStackPanel(Shape);
+    }
 
     public ICloneable Clone() {
         return new Projectile(this.Location, Colors.Red);
