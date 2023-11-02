@@ -1,7 +1,8 @@
 ﻿using System;
+using game_client.Models;
 using shared;
 
-namespace game_client.Models
+namespace game_client.AbstractFactory
 {
     public class BasicEnemyPixel : EnemyPixel, IEnemyPixel
     {
@@ -22,7 +23,7 @@ namespace game_client.Models
             int newX = _random.Next(0, 500);
             int newY = _random.Next(0, 800);
 
-            this.Location = new Vector2(newX, newY);
+            Location = new Vector2(newX, newY);
 
             Pixel.Margin = new Avalonia.Thickness(newX, newY, 0, 0);
         }
