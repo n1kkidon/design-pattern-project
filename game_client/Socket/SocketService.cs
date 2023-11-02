@@ -1,14 +1,13 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Avalonia.Controls;
+using Microsoft.AspNetCore.SignalR.Client;
 using Avalonia.Media;
 using Avalonia.Threading;
+using game_client.AbstractFactory;
 using game_client.Models;
 using game_client.Views;
-using Microsoft.AspNetCore.SignalR.Client;
 using shared;
 
 namespace game_client.Socket;
@@ -17,7 +16,6 @@ public class SocketService
 {
     public event Action<PlayerPixel> OnPlayerCreated;
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
-    private AbstractEnemyFactory enemyFactory = new BasicEnemyFactory();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
     private WeaponType _weaponType = WeaponType.HANDS;
@@ -53,9 +51,9 @@ public class SocketService
         instance ??= new();
         return instance;
     }
-    public async Task OnCurrentPlayerShoot(Vector2 direction, WeaponType weaponType)
+    public async Task OnCurrentPlayerShoot(IVector2 direction, WeaponType weaponType)
     {
-        await socket.InvokeAsync("ProjectileShot", direction, weaponType.ToString());
+        await socket.InvokeAsync("ProjectileShot", direction.ToVector2(), weaponType.ToString());
     }
 
     public async Task OnCurrentPlayerMove(Vector2 direction)
@@ -65,29 +63,67 @@ public class SocketService
 
     public async Task JoinGameLobby(string name, Color color, WeaponType weaponType) //this goes through backend, which calls the AddPlayerToLobby() below
     {
+       await socket.SendAsync("AddObstacleToGame");
        await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER, weaponType);
     }
     public async Task AddOpponentToGame()
     {
-        string[] difficulties = new[] { "EasySoldier", "HardSoldier", "EasyKnight", "HardKnight" };
-        foreach (var difficulty in difficulties)
+        var enemyCombinations = new List<(string difficulty, string enemyType)>{
+            ("Easy", "Soldier"),
+            ("Hard", "Soldier"),
+            ("Easy", "Knight"),
+            ("Hard", "Knight")
+        };
+
+        foreach (var combo in enemyCombinations)
         {
-            await socket.SendAsync("AddEntityToLobby", $"{difficulty}", new RGB(255, 0, 0), EntityType.ENEMY, WeaponType.HANDS);
+            AbstractEnemyFactory enemyFactory = combo.difficulty switch
+            {
+                "Easy" => new EasyEnemyFactory(),
+                "Hard" => new HardEnemyFactory()
+            };
+
+            var enemyPixel = enemyFactory.CreateEnemyPixel(combo.enemyType, ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), new Vector2());
+            var enemyStats = enemyFactory.CreateEnemyStats(combo.enemyType);
+
+            await socket.SendAsync("AddEntityToLobby", $"{combo.difficulty}{combo.enemyType}", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
+
+            // We can send stats, pixel to anywhere else, in order to interact. Maybe adjust CanvasObjectInfo.cs, to take in health/damage.
+
+            if (enemyStats.Health > 150)
+            {
+                Console.WriteLine($"Spawned insane monster - {combo.difficulty}{combo.enemyType} - Health: {enemyStats.Health}, Damage: {enemyStats.Damage}");
+            }
         }
     }
-    private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
-    {
-        Dispatcher.UIThread.Invoke(() => {
-            var entity = factory.CreateCanvasObject(entityInfo);
-            entity.AddObjectToCanvas();
-            CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
-            if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
-            {
-                OnPlayerCreated?.Invoke(playerPixel);
-            }
-        });
-    }
 
+private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
+{
+    Dispatcher.UIThread.Invoke(() => {
+
+        GameObject entity;
+        
+        // Check if the entity to be added is an Obstacle
+        if (entityInfo.EntityType == EntityType.OBSTACLE)
+        {
+            // Create an Obstacle instance
+            var obstacle = new Obstacle(entityInfo.Location);
+            
+            // Optionally decorate the Obstacle
+            entity = new IndestructibleObstacleDecorator(obstacle);
+        }
+        else
+        {
+            entity = factory.CreateCanvasObject(entityInfo);
+        }
+        if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
+        {
+            OnPlayerCreated?.Invoke(playerPixel);
+        }
+        entity.AddObjectToCanvas();
+        CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
+    });
+}
     private void RemoveObjectFromCanvas(string uuid)
     {
         CurrentCanvasObjects.TryRemove(uuid, out var entity);
@@ -285,4 +321,10 @@ public class SocketService
     {
         coinCount = 0; // Reset the coin count
     }
+
+    public Avalonia.Media.Color ConvertRGBToAvaloniaColor(RGB rgb)
+    {
+        return Avalonia.Media.Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
+    }
+
 }

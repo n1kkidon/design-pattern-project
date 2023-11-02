@@ -2,17 +2,32 @@ using System.Collections.Concurrent;
 using game_server.Services;
 using Microsoft.AspNetCore.SignalR;
 using shared;
-
 namespace game_server.Sockets;
 public class PlayerHub : Hub
 {
     public static readonly ConcurrentDictionary<string, CanvasObjectInfo> CurrentCanvasItems = new();
     private static readonly Random rnd = new();
     private readonly CoinBackgroundService _coinService;
-
     public PlayerHub(CoinBackgroundService coinService)
     {
         _coinService = coinService;
+    }
+
+    public async Task AddObstacleToGame()
+    {
+    var info = new CanvasObjectInfo
+    {
+        EntityType = EntityType.OBSTACLE,
+        
+        Name = "Obstacle",
+        Color = new RGB(128, 128, 128), 
+        Uuid = Guid.NewGuid().ToString(),
+        Location = new Vector2(rnd.Next((int)(Constants.MapWidth * 0.9)),
+                               rnd.Next((int)(Constants.MapHeight * 0.9)))
+    };
+
+    CurrentCanvasItems.TryAdd(info.Uuid, info);
+    await Clients.All.SendAsync("AddEntityToLobbyClient", info);
     }
 
     public async Task AddEntityToLobby(string name, RGB color, EntityType entityType, WeaponType weaponType)

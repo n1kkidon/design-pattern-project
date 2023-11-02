@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace game_client.Models
+namespace game_client.AbstractFactory
 {
     public interface IEnemyPixel
     {

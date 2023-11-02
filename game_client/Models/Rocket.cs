@@ -12,7 +12,7 @@ namespace game_client.Models
     {
         public Rocket(SocketService service) : base(service) { }
 
-        public override async Task Shoot(Vector2 position)
+        public override async Task Shoot(IVector2 position)
         {
             // Implement shooting logic specific to a pistol
             socketService.setWeaponProjectiles(WeaponType.ROCKET);

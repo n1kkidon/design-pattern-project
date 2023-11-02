@@ -71,7 +71,7 @@ public class PlayerPixel : GameObject, ISubject
         return _shootAlgorithm;
     }
 
-    public async void Shoot(Vector2 position)
+    public async void Shoot(IVector2 position)
     {
         await _shootAlgorithm.Shoot(position);
     }

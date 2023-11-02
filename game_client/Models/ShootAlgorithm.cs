@@ -17,6 +17,6 @@ namespace game_client.Models
             socketService = service;
         }
 
-        public abstract Task Shoot(Vector2 position);
+        public abstract Task Shoot(IVector2 position);
     }
 }

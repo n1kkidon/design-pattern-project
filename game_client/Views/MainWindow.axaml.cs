@@ -1,16 +1,14 @@
-using System;
-using Avalonia;
+using System.Drawing;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using game_client.Models;
-using game_client.Socket;
-using game_client.Adapters;
 using shared;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Sockets;
 using System.IO;
+using System;
+using game_client.Socket;
 
 namespace game_client.Views;
 
@@ -24,12 +22,15 @@ public partial class MainWindow : Window
     }
     private readonly GameFacade _gameFacade;
     private WeaponType _weaponType;
+    private bool gameStarted;
+
     public MainWindow()
     {
         InitializeComponent();
         _gameFacade = new GameFacade(this);
         var socketService = SocketService.GetInstance();
         socketService.OnPlayerCreated += HandlePlayerCreated;
+        gameStarted = false;
     }
 
     private void OnJoinButtonClick(object sender, RoutedEventArgs e)
@@ -37,20 +38,29 @@ public partial class MainWindow : Window
         var name = nameField.Text;
         _gameFacade.JoinAndStartGame(name, _weaponType);
         weaponSelectionPanel.IsVisible = false;
+        if (string.IsNullOrEmpty(name))
+            return;
         canvas.Children.Remove(joinButton);
         canvas.Children.Remove(nameField);
+        gameStarted = true;
     }
 
     private void OnMouseClick(object sender, PointerPressedEventArgs e)
     {
+        if(!gameStarted)
+            return;
         var clickPos = e.GetPosition(canvas);
-        var position = new Vector2((float)clickPos.X, Constants.MapHeight-(float)clickPos.Y); //TODO: move this to adapter class
+        var pnt = new Point((int)clickPos.X, (int)clickPos.Y);
+        var pointAdapter = new PointAdapter(pnt);
+        //var position = new Vector2((float)clickPos.X, Constants.MapHeight-(float)clickPos.Y);
         
-        _gameFacade.SendShootingCords(position);
+        _gameFacade.SendShootingCords(pointAdapter);
     }
     private void HandlePlayerCreated(PlayerPixel player)
     {
+        Console.WriteLine("Setting new player");
         _gameFacade.SetCurrentPlayer(player, _weaponType);
+        Console.WriteLine("Finished setting");
     }
     protected override void OnKeyDown(KeyEventArgs e)
     {
@@ -64,7 +74,6 @@ public partial class MainWindow : Window
             _weaponType = Enum.Parse<WeaponType>(radioButton.Content.ToString(), true);
         }
     }
-
 
     protected override void OnKeyUp(KeyEventArgs e)
     {
