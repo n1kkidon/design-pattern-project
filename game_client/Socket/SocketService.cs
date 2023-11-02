@@ -1,16 +1,13 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Avalonia.Controls;
+using Microsoft.AspNetCore.SignalR.Client;
 using Avalonia.Media;
 using Avalonia.Threading;
 using game_client.AbstractFactory;
 using game_client.Models;
 using game_client.Views;
-using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using shared;
 
 namespace game_client.Socket;
@@ -53,9 +50,9 @@ public class SocketService
         instance ??= new();
         return instance;
     }
-    public async Task OnCurrentPlayerShoot(Vector2 direction)
+    public async Task OnCurrentPlayerShoot(IVector2 direction)
     {
-        await socket.InvokeAsync("ProjectileShot", direction);
+        await socket.InvokeAsync("ProjectileShot", direction.ToVector2());
     }
 
     public async Task OnCurrentPlayerMove(Vector2 direction)

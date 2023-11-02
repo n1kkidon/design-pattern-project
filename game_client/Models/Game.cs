@@ -14,7 +14,7 @@ public class Game : GameBase
     protected override async Task Tick()
     {
         OnTick?.Invoke();
-        if(!MovementInput.Zero)
+        if(!MovementInput.IsZero())
             await socketService.OnCurrentPlayerMove(MovementInput);        
     }
 

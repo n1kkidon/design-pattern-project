@@ -52,7 +52,7 @@ namespace game_client.Models
             InputHandler.RemoveKey(key);
         }
 
-        public async void SendShootingCords(Vector2 position)
+        public async void SendShootingCords(IVector2 position)
         {
             var _socketService = SocketService.GetInstance();
             await _socketService.OnCurrentPlayerShoot(position);

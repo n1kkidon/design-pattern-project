@@ -1,15 +1,9 @@
-using System;
-using Avalonia;
+using System.Drawing;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using game_client.Models;
-using game_client.Socket;
-using game_client.Adapters;
 using shared;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace game_client.Views;
 
@@ -47,9 +41,11 @@ public partial class MainWindow : Window
         if(!gameStarted)
             return;
         var clickPos = e.GetPosition(canvas);
-        var position = new Vector2((float)clickPos.X, Constants.MapHeight-(float)clickPos.Y); //TODO: move this to adapter class
+        var pnt = new Point((int)clickPos.X, (int)clickPos.Y);
+        var pointAdapter = new PointAdapter(pnt);
+        //var position = new Vector2((float)clickPos.X, Constants.MapHeight-(float)clickPos.Y);
         
-        _gameFacade.SendShootingCords(position);
+        _gameFacade.SendShootingCords(pointAdapter);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
