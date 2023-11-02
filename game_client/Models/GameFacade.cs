@@ -21,8 +21,6 @@ namespace game_client.Models
         {
             if (string.IsNullOrEmpty(name))
                 return;
-            Console.WriteLine("BLED");
-            Console.WriteLine(selectedWeapon + "chachahc");
             currentWeapon = selectedWeapon;
             var _socketService = SocketService.GetInstance();
             var _game = Game.GetInstance();
@@ -50,7 +48,6 @@ namespace game_client.Models
         }
         public void SetCurrentPlayer(PlayerPixel player, WeaponType weaponType)
         {
-            Console.WriteLine("Current weapon is: " + weaponType);
             var _socketService = SocketService.GetInstance();
             currentPlayer = player;
             switch (weaponType)
