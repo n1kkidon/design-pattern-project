@@ -24,7 +24,7 @@ public class Projectile : GameObject, ICloneable
     }
 
     public ICloneable Clone() {
-        return new Projectile(this.Location, Colors.Red);
+        return new Projectile(this.Location, Colors.Blue);
     }
 
     public ICloneable ShallowClone() {

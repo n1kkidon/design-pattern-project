@@ -13,5 +13,5 @@ public record RGB(byte R, byte G, byte B);
 
 public enum EntityType
 {
-    PLAYER, ENEMY, COIN
+    PLAYER, ENEMY, COIN, OBSTACLE
 }

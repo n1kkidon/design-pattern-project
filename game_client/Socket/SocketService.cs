@@ -66,6 +66,7 @@ public class SocketService
     public async Task JoinGameLobby(string name, Color color) //this goes through backend, which calls the AddPlayerToLobby() below
     {
        await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER);
+       await socket.SendAsync("AddObstacleToGame");
     }
     public async Task AddOpponentToGame()
     {
@@ -75,14 +76,34 @@ public class SocketService
             await socket.SendAsync("AddEntityToLobby", $"{difficulty}", new RGB(255, 0, 0), EntityType.ENEMY);
         }
     }
-    private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
-    {
-        Dispatcher.UIThread.Invoke(() => {
-            var entity = factory.CreateCanvasObject(entityInfo);
-            entity.AddObjectToCanvas();
-            CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
-        });
-    }
+private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
+{
+    Dispatcher.UIThread.Invoke(() => {
+        Console.WriteLine($"Adding entity to lobby: {entityInfo.EntityType}");
+
+        GameObject entity;
+        
+        // Check if the entity to be added is an Obstacle
+        if (entityInfo.EntityType == EntityType.OBSTACLE)
+        {
+            Console.WriteLine("Creating an Obstacle at " + entityInfo.Location);
+            // Create an Obstacle instance
+            var obstacle = new Obstacle(entityInfo.Location);
+            
+            // Optionally decorate the Obstacle
+            entity = new IndestructibleObstacleDecorator(obstacle);
+        }
+        else
+        {
+            // For other entity types, use the factory as before
+            entity = factory.CreateCanvasObject(entityInfo);
+        }
+
+        entity.AddObjectToCanvas();
+        CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
+    });
+}
+
 
     private void RemoveObjectFromCanvas(string uuid)
     {

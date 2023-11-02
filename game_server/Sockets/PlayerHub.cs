@@ -15,6 +15,23 @@ public class PlayerHub : Hub
         _coinService = coinService;
     }
 
+    public async Task AddObstacleToGame()
+    {
+    var info = new CanvasObjectInfo
+    {
+        EntityType = EntityType.OBSTACLE,
+        // Assuming obstacles don't need a name or color, but adjust as necessary
+        Name = "Obstacle",
+        Color = new RGB(128, 128, 128), // Placeholder color, adjust as necessary
+        Uuid = Guid.NewGuid().ToString(),
+        Location = new Vector2(rnd.Next((int)(Constants.MapWidth * 0.9)),
+                               rnd.Next((int)(Constants.MapHeight * 0.9)))
+    };
+
+    CurrentCanvasItems.TryAdd(info.Uuid, info);
+    await Clients.All.SendAsync("AddEntityToLobbyClient", info);
+    }
+
     public async Task AddEntityToLobby(string name, RGB color, EntityType entityType)
     {   
         var info = new CanvasObjectInfo{
