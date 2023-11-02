@@ -21,6 +21,7 @@ namespace game_client.Models
         {
             if (string.IsNullOrEmpty(name))
                 return;
+            Console.WriteLine("Selected weapon: " + selectedWeapon);
             currentWeapon = selectedWeapon;
             var _socketService = SocketService.GetInstance();
             var _game = Game.GetInstance();
@@ -46,9 +47,38 @@ namespace game_client.Models
 
             _game.Start();
         }
-        public void SetCurrentPlayer(PlayerPixel player)
+        public void SetCurrentPlayer(PlayerPixel player, WeaponType weaponType)
         {
+            var _socketService = SocketService.GetInstance();
             currentPlayer = player;
+            switch (weaponType)
+            {
+                case WeaponType.PISTOL:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Pistol(_socketService));
+                        break;
+                    }
+                case WeaponType.ROCKET:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Rocket(_socketService));
+                        break;
+                    }
+                case WeaponType.SNIPER:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Sniper(_socketService));
+                        break;
+                    }
+                case WeaponType.CANNON:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Cannon(_socketService));
+                        break;
+                    }
+                default:
+                    {
+                        currentPlayer.SetShootingAlgorithm(new Pistol(_socketService));
+                        break;
+                    }
+            }
         }
         public void setCurrentWeapon(WeaponType weapon)
         {

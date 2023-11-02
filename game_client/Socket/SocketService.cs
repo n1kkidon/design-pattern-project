@@ -20,8 +20,8 @@ public class SocketService
     private AbstractEnemyFactory enemyFactory = new BasicEnemyFactory();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
-
-    Projectile originalProjectile = new Projectile(new Vector2(0, 0), Colors.White);
+    private WeaponType _weaponType = WeaponType.PISTOL;
+    Projectile originalProjectile;
 
     private int coinCount;
 
@@ -210,6 +210,45 @@ public class SocketService
             var mainWindow = MainWindow.GetInstance();
             mainWindow.coinCounter.Text = $"Coins: {coinCount}";
         });
+    }
+
+    public void setWeaponProjectiles(WeaponType weapon)
+    {
+        if (weapon.ToString() == _weaponType.ToString()) return;
+        Console.WriteLine(weapon.ToString());
+        switch (weapon)
+        {
+            case WeaponType.PISTOL:
+                {
+                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.AliceBlue, 10, 10);
+                    _weaponType = WeaponType.PISTOL;
+                    break;
+                }
+            case WeaponType.SNIPER:
+                {
+                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.Red, 6, 6);
+                    _weaponType = WeaponType.SNIPER;
+                    break;
+                }
+            case WeaponType.ROCKET:
+                {
+                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.OrangeRed, 15, 15);
+                    _weaponType = WeaponType.ROCKET;
+                    break;
+                }
+            case WeaponType.CANNON:
+                {
+                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.Cyan, 30, 30);
+                    _weaponType = WeaponType.CANNON;
+                    break;
+                }
+            default:
+                {
+                    originalProjectile = new Projectile(new Vector2(0, 0), Colors.Purple, 20, 20);
+                    break;
+                }
+        }
+        
     }
 
     public void ResetCoinCount()

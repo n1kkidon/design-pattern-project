@@ -15,6 +15,7 @@ namespace game_client.Models
         public override async Task Shoot(Vector2 position)
         {
             // Implement shooting logic specific to a pistol
+            socketService.setWeaponProjectiles(WeaponType.PISTOL);
             await socketService.OnCurrentPlayerShoot(position);
         }
     }

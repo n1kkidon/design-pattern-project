@@ -10,6 +10,7 @@ using game_client.Adapters;
 using shared;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Sockets;
+using System.IO;
 
 namespace game_client.Views;
 
@@ -25,6 +26,7 @@ public partial class MainWindow : Window
     private WeaponType _weaponType;
     public MainWindow()
     {
+        Console.SetOut(new StreamWriter("path_to_log_file.txt") { AutoFlush = true });
         InitializeComponent();
         _gameFacade = new GameFacade(this);
         var socketService = SocketService.GetInstance();
@@ -49,7 +51,7 @@ public partial class MainWindow : Window
     }
     private void HandlePlayerCreated(PlayerPixel player)
     {
-        _gameFacade.SetCurrentPlayer(player);
+        _gameFacade.SetCurrentPlayer(player, _weaponType);
     }
     protected override void OnKeyDown(KeyEventArgs e)
     {
