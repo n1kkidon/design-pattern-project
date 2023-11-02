@@ -39,15 +39,7 @@ public struct PointAdapter : IVector2
     /// </summary>
     public float Y { get => Constants.MapHeight-(float)_point.Y; set => _point.Y = (int)value; }
     private Point _point;
-
-    public PointAdapter(Point point)
-    {
-        _point = point;
-        //(float)clickPos.X, Constants.MapHeight-(float)clickPos.Y
-    }
-    public bool IsZero()
-    {
-        return X == 0 && Y == 0;
-    }
+    public PointAdapter(Point point) => _point = point;
+    public bool IsZero() => X == 0 && Y == 0;
     public Vector2 ToVector2() => new(X, Y);
 }

@@ -19,8 +19,6 @@ public class PlayerPixel : GameObject, ISubject
 
     private int health = 10;
 
-    private List<IObserver> observers = new();
-
     public PlayerPixel(string name, Color color, Vector2 location) : base(location)
     {
         _shootAlgorithm = new Pistol(_socketService); 
@@ -51,6 +49,24 @@ public class PlayerPixel : GameObject, ISubject
         new HealthBarObserver(this, HealthBar);
     }
 
+    private List<IObserver> observers = new();
+    public void RegisterObserver(IObserver observer)
+    {
+        observers.Add(observer);
+    }
+
+    public void RemoveObserver(IObserver observer)
+    {
+        observers.Remove(observer);
+    }
+
+    public void NotifyObservers()
+    {
+        foreach (var observer in observers)
+        {
+            observer.Update(health);
+        }
+    }
     public void DecreaseHealth()
     {
         if (health > 0)
@@ -76,21 +92,5 @@ public class PlayerPixel : GameObject, ISubject
         await _shootAlgorithm.Shoot(position);
     }
 
-    public void RegisterObserver(IObserver observer)
-    {
-        observers.Add(observer);
-    }
 
-    public void RemoveObserver(IObserver observer)
-    {
-        observers.Remove(observer);
-    }
-
-    public void NotifyObservers()
-    {
-        foreach (var observer in observers)
-        {
-            observer.Update(health);
-        }
-    }
 }

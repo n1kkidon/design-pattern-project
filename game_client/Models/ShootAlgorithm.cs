@@ -6,17 +6,17 @@ using System.Text;
 using System.Threading.Tasks;
 using shared;
 
-namespace game_client.Models
+namespace game_client.Models;
+
+public abstract class ShootAlgorithm
 {
-    public abstract class ShootAlgorithm
+    protected SocketService socketService;
+
+    protected ShootAlgorithm(SocketService service)
     {
-        protected SocketService socketService;
-
-        protected ShootAlgorithm(SocketService service)
-        {
-            socketService = service;
-        }
-
-        public abstract Task Shoot(IVector2 position);
+        socketService = service;
     }
+
+    public abstract Task Shoot(IVector2 position);
 }
+

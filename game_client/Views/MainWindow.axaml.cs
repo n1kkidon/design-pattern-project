@@ -52,8 +52,6 @@ public partial class MainWindow : Window
         var clickPos = e.GetPosition(canvas);
         var pnt = new Point((int)clickPos.X, (int)clickPos.Y);
         var pointAdapter = new PointAdapter(pnt);
-        //var position = new Vector2((float)clickPos.X, Constants.MapHeight-(float)clickPos.Y);
-        
         _gameFacade.SendShootingCords(pointAdapter);
     }
     private void HandlePlayerCreated(PlayerPixel player)

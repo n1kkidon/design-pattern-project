@@ -19,22 +19,18 @@ public class Obstacle : GameObject
             Height = 100,
             Fill = new SolidColorBrush(Colors.Gray)
         };
-
         AddToStackPanel(_shape);
     }
-
 }
 
 // Decorator abstract class
 public abstract class ObstacleDecorator : Obstacle
 {
     protected Obstacle _decoratedObstacle;
-
     public ObstacleDecorator(Obstacle decoratedObstacle) : base(decoratedObstacle.Location)
     {
         _decoratedObstacle = decoratedObstacle;
     }
-
 }
 public class IndestructibleObstacleDecorator : ObstacleDecorator
 {
