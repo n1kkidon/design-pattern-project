@@ -28,7 +28,6 @@ public class SocketService
     ProjectileDirector director = new ProjectileDirector();
     Projectile originalProjectile;
     Team giants = new Team("Giants", true);
-    Team trolls = new Team("Trolls", false);
     private int coinCount;
 
     private SocketService()
@@ -106,38 +105,34 @@ public class SocketService
         await socket.SendAsync("AddEntityToLobby", $"Troll", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
     }
 
-private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
-{
-    Dispatcher.UIThread.Invoke(() => {
+    private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
+    {
+        Dispatcher.UIThread.Invoke(() => {
 
-        GameObject entity;
+            GameObject entity;
         
-        // Check if the entity to be added is an Obstacle
-        if (entityInfo.EntityType == EntityType.OBSTACLE)
-        {
-            // Create an Obstacle instance
-            var obstacle = new Obstacle(entityInfo.Location);
+            // Check if the entity to be added is an Obstacle
+            if (entityInfo.EntityType == EntityType.OBSTACLE)
+            {
+                // Create an Obstacle instance
+                var obstacle = new Obstacle(entityInfo.Location);
             
-            // Optionally decorate the Obstacle
-            entity = new IndestructibleObstacleDecorator(obstacle);
-        }
-        else
-        {
-            entity = factory.CreateCanvasObject(entityInfo);
-        }
-        if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
-        {
-            OnPlayerCreated?.Invoke(playerPixel);
-        }
-        if(entityInfo.Name == "Giant" && entity is EnemyPixel enemy)
-        {
-            giants.Add(enemy);
-        }
-        entity.AddObjectToCanvas();
-        CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
-        _gameObjectsCollection.Add(entityInfo.Uuid, entity);
-    });
-}
+                // Optionally decorate the Obstacle
+                entity = new IndestructibleObstacleDecorator(obstacle);
+            }
+            else
+            {
+                entity = factory.CreateCanvasObject(entityInfo);
+            }
+            if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
+            {
+                OnPlayerCreated?.Invoke(playerPixel);
+            }
+            entity.AddObjectToCanvas();
+            CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
+            _gameObjectsCollection.Add(entityInfo.Uuid, entity);
+        });
+    }
     private void RemoveObjectFromCanvas(string uuid)
     {
         RemoveIteratorObject(uuid);
