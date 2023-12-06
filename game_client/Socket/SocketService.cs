@@ -11,6 +11,7 @@ using game_client.Views;
 using shared;
 using game_client.Builder;
 using game_client.Bridge;
+using game_client.Template;
 
 namespace game_client.Socket;
 
@@ -23,9 +24,7 @@ public class SocketService
     private WeaponType _weaponType = WeaponType.HANDS;
     IProjectileBuilder builder = new ProjectileBuilder();
     ProjectileDirector director = new ProjectileDirector();
-
     Projectile originalProjectile;
-
     private int coinCount;
 
     private SocketService()
@@ -172,7 +171,8 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
                     }
                 case "CANNON":
                     {
-                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.Cyan, 30, 30);
+                        var cannonCreator = new CannonProjectileCreation();
+                        projectileForAll = cannonCreator.CreateProjectile(new Vector2(0, 0));
                         break;
                     }
                 default:
@@ -307,7 +307,8 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
                 }
             case WeaponType.CANNON:
                 {
-                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.Cyan, 30, 30);
+                    var cannonCreator = new CannonProjectileCreation();
+                    originalProjectile = cannonCreator.CreateProjectile(new Vector2(0, 0));
                     _weaponType = WeaponType.CANNON;
                     break;
                 }
