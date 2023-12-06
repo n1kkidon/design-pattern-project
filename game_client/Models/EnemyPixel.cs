@@ -37,17 +37,19 @@ public class EnemyPixel : GameObject, IGameComponent
     public void Operation()
     {
         Console.WriteLine($"{_name} of size {_size} at {_position} is performing an operation.");
+        IncreaseSize();
     }
 
     public bool IsComposite() => false;
 
     public void IncreaseSize()
     {
-        _size++; // Increase size by 1
+        _size += 10; // Increase size by 1
         Dispatcher.UIThread.InvokeAsync(() =>
         {
             Pixel.Width = _size;
             Pixel.Height = _size;
+            Pixel.InvalidateVisual();
         });
         Console.WriteLine($"{_name} increased to size {_size}.");
     }

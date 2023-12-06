@@ -72,6 +72,8 @@ public class SocketService
     {
        await socket.SendAsync("AddObstacleToGame");
        await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER, weaponType);
+       await socket.SendAsync("AddEntityToLobby", $"Giant", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
+       await socket.SendAsync("AddEntityToLobby", $"Troll", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
     }
     public async Task AddOpponentToGame()
     {
@@ -101,8 +103,6 @@ public class SocketService
                 Console.WriteLine($"Spawned insane monster - {combo.difficulty}{combo.enemyType} - Health: {enemyStats.Health}, Damage: {enemyStats.Damage}");
             }
         }
-        await socket.SendAsync("AddEntityToLobby", $"Giant", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
-        await socket.SendAsync("AddEntityToLobby", $"Troll", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
     }
 
     private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
@@ -127,6 +127,10 @@ public class SocketService
             if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
             {
                 OnPlayerCreated?.Invoke(playerPixel);
+            }
+            if (entityInfo.Name == "Giant" && entity is EnemyPixel enemy)
+            {
+                giants.Add(enemy);
             }
             entity.AddObjectToCanvas();
             CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
@@ -269,7 +273,7 @@ public class SocketService
             {
                 await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
                 RemoveObjectFromCanvas(iteratorObject.Key);
-
+                giants.Operation();
                 coinCount++;
                 UpdateCoinCounter(); // Update the coin counter
 
@@ -303,10 +307,6 @@ public class SocketService
             var mainWindow = MainWindow.GetInstance();
             mainWindow.coinCounter.Text = $"Coins: {coinCount}";
         });
-    }
-    public void IncreaseSizeOfGiants()
-    {
-        giants.Operation(); // This calls IncreaseSize() on all giant team members
     }
     public void setWeaponProjectiles(WeaponType weapon)
     {
