@@ -9,6 +9,8 @@ public class Projectile : GameObject, ICloneable
     private Ellipse Shape;
     private int height = 0;
     private int width = 0;
+    private bool isFinalized = false;
+    private int explosionRange = 0;
     public Color Color {
         get => ((SolidColorBrush)Shape.Fill).Color;
         set => Shape.Fill = new SolidColorBrush(value);
@@ -35,6 +37,16 @@ public class Projectile : GameObject, ICloneable
             Height = height
         };
         AddToStackPanel(Shape);
+    }
+
+    public void setFinalized (bool isFinalized)
+    {
+        this.isFinalized = isFinalized;
+    }
+
+    public void setExplosionRange (int explosionRange)
+    {
+        this.explosionRange = explosionRange;
     }
 
     public ICloneable Clone() {
