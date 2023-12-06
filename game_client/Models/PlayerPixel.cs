@@ -6,15 +6,18 @@ using game_client.Observer;
 using shared;
 using System.Collections.Generic;
 using game_client.Socket;
+using game_client.Models.PlayerState;
 
 namespace game_client.Models;
 
 public class PlayerPixel : GameObject, ISubject
 {
+    private IPlayerState _currentState;
     private TextBlock NameTag;
     private Rectangle Pixel;
     private Rectangle HealthBar;
     private ShootAlgorithm _shootAlgorithm;
+    public ShootAlgorithm ShootAlgorithm => _shootAlgorithm;
     SocketService _socketService = SocketService.GetInstance();
 
     private int health = 10;
@@ -47,6 +50,9 @@ public class PlayerPixel : GameObject, ISubject
         AddToStackPanel(HealthBar, true);
 
         new HealthBarObserver(this, HealthBar);
+
+        // Set initial state
+        _currentState = new NormalState(this);
     }
 
     private List<IObserver> observers = new();
@@ -67,12 +73,26 @@ public class PlayerPixel : GameObject, ISubject
             observer.Update(health);
         }
     }
+
     public void DecreaseHealth()
     {
         if (health > 0)
         {
             health--;
             NotifyObservers();
+        }
+        CheckForStateTransition();
+    }
+
+    private void CheckForStateTransition()
+    {
+        if (health <= 0 && !(_currentState is DeadState))
+        {
+            SetState(new DeadState(this));
+        }
+        else if (health < 7 && _currentState is NormalState)
+        {
+            SetState(new InjuredState(this));
         }
     }
 
@@ -81,16 +101,13 @@ public class PlayerPixel : GameObject, ISubject
         _shootAlgorithm = shootAlgo;
     }
 
-    // Method to get the current shooting algorithm
-    public ShootAlgorithm GetShootAlgorithm()
-    {
-        return _shootAlgorithm;
-    }
-
     public async void Shoot(IVector2 position)
     {
-        await _shootAlgorithm.Shoot(position);
+        _currentState.Shoot(position);
     }
 
-
+    public void SetState(IPlayerState newState)
+    {
+        _currentState = newState;
+    }
 }
