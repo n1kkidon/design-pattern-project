@@ -12,11 +12,13 @@ using shared;
 using game_client.Builder;
 using game_client.Bridge;
 using game_client.Template;
+using game_client.Iterator;
 
 namespace game_client.Socket;
 
 public class SocketService
 {
+    private GameObjectCollection _gameObjectsCollection = new GameObjectCollection();
     public event Action<PlayerPixel> OnPlayerCreated;
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
     private readonly HubConnection socket;
@@ -125,13 +127,29 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
         }
         entity.AddObjectToCanvas();
         CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
+        _gameObjectsCollection.Add(entityInfo.Uuid, entity);
     });
 }
     private void RemoveObjectFromCanvas(string uuid)
     {
+        RemoveIteratorObject(uuid);
         CurrentCanvasObjects.TryRemove(uuid, out var entity);
         if(entity != null)
             Dispatcher.UIThread.Invoke(entity.RemoveObjectFromCanvas);
+    }
+
+    private void RemoveIteratorObject(string uuid)
+    {
+        var iterator = _gameObjectsCollection.CreateIterator();
+        while (iterator.HasNext())
+        {
+            var current = iterator.Next();
+            if (current.Key == uuid)
+            {
+                iterator.Remove();
+                break;
+            }
+        }
     }
 
     private async void UpdateEntityPositionInClient(Vector2 direction, string uuid)
@@ -239,19 +257,22 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
 
     public async Task CheckForObjectCollision(PlayerPixel currentPlayer)
     {
-        foreach (var coin in CurrentCanvasObjects)
+        var iterator = _gameObjectsCollection.CreateIterator();
+
+        while (iterator.HasNext())
         {
-            if (coin.Value is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
+            var iteratorObject = iterator.Next();
+            if (iteratorObject.GameObject is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
             {
-                await socket.InvokeAsync("PickupCoin", coin.Key);
-                RemoveObjectFromCanvas(coin.Key);
+                await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
+                RemoveObjectFromCanvas(iteratorObject.Key);
 
                 coinCount++;
                 UpdateCoinCounter(); // Update the coin counter
 
                 break;
             }
-            else if (coin.Value is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
+            else if (iteratorObject.GameObject is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
             {
                 currentPlayer.DecreaseHealth(); // Decrease player health
             }
@@ -319,6 +340,10 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
                 }
         }
         
+    }
+    public IGameObjectIterator GetGameObjectIterator()
+    {
+        return _gameObjectsCollection.CreateIterator();
     }
 
     public void ResetCoinCount()
