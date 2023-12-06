@@ -28,6 +28,7 @@ public class SocketService
     ProjectileDirector director = new ProjectileDirector();
     Projectile originalProjectile;
     Team giants = new Team("Giants", true);
+    Team gnomes = new Team("Gnomes", false);
     private int coinCount;
 
     private SocketService()
@@ -73,7 +74,7 @@ public class SocketService
        await socket.SendAsync("AddObstacleToGame");
        await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER, weaponType);
        await socket.SendAsync("AddEntityToLobby", $"Giant", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
-       await socket.SendAsync("AddEntityToLobby", $"Troll", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
+       await socket.SendAsync("AddEntityToLobby", $"Gnome", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
     }
     public async Task AddOpponentToGame()
     {
@@ -128,9 +129,13 @@ public class SocketService
             {
                 OnPlayerCreated?.Invoke(playerPixel);
             }
-            if (entityInfo.Name == "Giant" && entity is EnemyPixel enemy)
+            if (entityInfo.Name == "Giant" && entity is EnemyPixel enemyGiant)
             {
-                giants.Add(enemy);
+                giants.Add(enemyGiant);
+            }
+            if (entityInfo.Name == "Gnome" && entity is EnemyPixel enemyGnome)
+            {
+                gnomes.Add(enemyGnome);
             }
             entity.AddObjectToCanvas();
             CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
@@ -268,20 +273,28 @@ public class SocketService
 
         while (iterator.HasNext())
         {
-            var iteratorObject = iterator.Next();
-            if (iteratorObject.GameObject is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
+            try
             {
-                await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
-                RemoveObjectFromCanvas(iteratorObject.Key);
-                giants.Operation();
-                coinCount++;
-                UpdateCoinCounter(); // Update the coin counter
+                var iteratorObject = iterator.Next();
+                if (iteratorObject.GameObject is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
+                {
+                    await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
+                    RemoveObjectFromCanvas(iteratorObject.Key);
+                    giants.Operation();
+                    gnomes.Operation();
+                    coinCount++;
+                    UpdateCoinCounter(); // Update the coin counter
 
-                break;
+                    break;
+                }
+                else if (iteratorObject.GameObject is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
+                {
+                    currentPlayer.DecreaseHealth(); // Decrease player health
+                }
             }
-            else if (iteratorObject.GameObject is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
+            catch (Exception e)
             {
-                currentPlayer.DecreaseHealth(); // Decrease player health
+
             }
         }
     }

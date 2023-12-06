@@ -11,6 +11,6 @@ namespace game_client.Composite
         void Operation();
         bool IsComposite();
         void IncreaseSize();
-        void ChangePosition();
+        void ShapeShift();
     }
 }

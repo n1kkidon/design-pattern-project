@@ -13,12 +13,9 @@ public class EnemyPixel : GameObject, IGameComponent
     private TextBlock NameTag;
     protected Ellipse Pixel;
     private string _name;
-    private int _size;
-    private Vector2 _position;
+    private int _size = 16;
     public EnemyPixel(string name, Color color, Vector2 location) : base(location){ //initial location 
         _name = name;
-        _size = 16;
-        _position = location;
         NameTag = new(){
             Foreground = new SolidColorBrush(Colors.White),
             Text = name,
@@ -36,8 +33,7 @@ public class EnemyPixel : GameObject, IGameComponent
 
     public void Operation()
     {
-        Console.WriteLine($"{_name} of size {_size} at {_position} is performing an operation.");
-        IncreaseSize();
+        Console.WriteLine($"{_name} of size {_size} is performing an operation.");
     }
 
     public bool IsComposite() => false;
@@ -54,18 +50,43 @@ public class EnemyPixel : GameObject, IGameComponent
         Console.WriteLine($"{_name} increased to size {_size}.");
     }
 
-    public void ChangePosition()
+    public void ShapeShift()
     {
         // Move the enemy by one pixel in a random direction
         Random rnd = new Random();
         int direction = rnd.Next(4);
-        switch (direction)
+
+
+        Dispatcher.UIThread.InvokeAsync(() =>
         {
-            case 0: _position.X++; break; // Right
-            case 1: _position.X--; break; // Left
-            case 2: _position.Y++; break; // Down
-            case 3: _position.Y--; break; // Up
-        }
-        Console.WriteLine($"{_name} moved to new position {_position}.");
+            switch (direction)
+            {
+                case 0:
+                    {
+                        NameTag.Text = "Chameleon";
+                        NameTag.Foreground = new SolidColorBrush(Colors.ForestGreen);
+                        break;
+                    }
+                case 1:
+                    {
+                        NameTag.Text = "Chameleon";
+                        NameTag.Foreground = new SolidColorBrush(Colors.Brown);
+                        break;
+                    }
+                case 2:
+                    {
+                        NameTag.Text = "Chameleon";
+                        NameTag.Foreground = new SolidColorBrush(Colors.Cyan);
+                        break;
+                    }
+                case 3:
+                    {
+                        NameTag.Text = "Chameleon";
+                        NameTag.Foreground = new SolidColorBrush(Colors.Violet);
+                        break;
+                    }
+            }
+            Pixel.InvalidateVisual();
+        });
     }
 }

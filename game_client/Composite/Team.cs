@@ -27,13 +27,24 @@ namespace game_client.Composite
             foreach (var member in _members)
             {
                 member.Operation();
-                if (_increaseSize) member.IncreaseSize(); // If this team increases size
+                if (_increaseSize) member.IncreaseSize(); 
+                else member.ShapeShift();
             }
         }
 
         public bool IsComposite() => true;
 
-        public void IncreaseSize() { /* ... */ }
-        public void ChangePosition() { /* ... */ }
+        public void IncreaseSize() {
+            foreach (var member in _members)
+            {
+                member.IncreaseSize();
+            }
+        }
+        public void ShapeShift() {
+            foreach (var member in _members)
+            {
+                member.ShapeShift();
+            }
+        }
     }
 }
