@@ -13,7 +13,7 @@ using game_client.Builder;
 using game_client.Bridge;
 using game_client.Template;
 using game_client.Iterator;
-
+using game_client.Composite;
 namespace game_client.Socket;
 
 public class SocketService
@@ -27,6 +27,8 @@ public class SocketService
     IProjectileBuilder builder = new ProjectileBuilder();
     ProjectileDirector director = new ProjectileDirector();
     Projectile originalProjectile;
+    Team giants = new Team("Giants", true);
+    Team trolls = new Team("Trolls", false);
     private int coinCount;
 
     private SocketService()
@@ -100,6 +102,8 @@ public class SocketService
                 Console.WriteLine($"Spawned insane monster - {combo.difficulty}{combo.enemyType} - Health: {enemyStats.Health}, Damage: {enemyStats.Damage}");
             }
         }
+        await socket.SendAsync("AddEntityToLobby", $"Giant", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
+        await socket.SendAsync("AddEntityToLobby", $"Troll", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
     }
 
 private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
@@ -124,6 +128,10 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
         if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
         {
             OnPlayerCreated?.Invoke(playerPixel);
+        }
+        if(entityInfo.Name == "Giant" && entity is EnemyPixel enemy)
+        {
+            giants.Add(enemy);
         }
         entity.AddObjectToCanvas();
         CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
@@ -301,7 +309,10 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
             mainWindow.coinCounter.Text = $"Coins: {coinCount}";
         });
     }
-
+    public void IncreaseSizeOfGiants()
+    {
+        giants.Operation(); // This calls IncreaseSize() on all giant team members
+    }
     public void setWeaponProjectiles(WeaponType weapon)
     {
         if (weapon.ToString() == _weaponType.ToString()) return;
