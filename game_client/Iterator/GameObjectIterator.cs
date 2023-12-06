@@ -25,6 +25,7 @@ namespace game_client.Iterator
 
             // Remove the last returned item by Next()
             _collection.Remove(_collection[_currentIndex - 1].Key);
+            _currentIndex--;
         }
         public bool HasNext()
         {
