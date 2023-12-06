@@ -13,7 +13,7 @@ using game_client.Builder;
 using game_client.Bridge;
 using game_client.Template;
 using game_client.Iterator;
-
+using game_client.Composite;
 namespace game_client.Socket;
 
 public class SocketService
@@ -27,6 +27,8 @@ public class SocketService
     IProjectileBuilder builder = new ProjectileBuilder();
     ProjectileDirector director = new ProjectileDirector();
     Projectile originalProjectile;
+    Team giants = new Team("Giants", true);
+    Team gnomes = new Team("Gnomes", false);
     private int coinCount;
 
     private SocketService()
@@ -71,6 +73,8 @@ public class SocketService
     {
        await socket.SendAsync("AddObstacleToGame");
        await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER, weaponType);
+       await socket.SendAsync("AddEntityToLobby", $"Giant", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
+       await socket.SendAsync("AddEntityToLobby", $"Gnome", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
     }
     public async Task AddOpponentToGame()
     {
@@ -102,34 +106,42 @@ public class SocketService
         }
     }
 
-private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
-{
-    Dispatcher.UIThread.Invoke(() => {
+    private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
+    {
+        Dispatcher.UIThread.Invoke(() => {
 
-        GameObject entity;
+            GameObject entity;
         
-        // Check if the entity to be added is an Obstacle
-        if (entityInfo.EntityType == EntityType.OBSTACLE)
-        {
-            // Create an Obstacle instance
-            var obstacle = new Obstacle(entityInfo.Location);
+            // Check if the entity to be added is an Obstacle
+            if (entityInfo.EntityType == EntityType.OBSTACLE)
+            {
+                // Create an Obstacle instance
+                var obstacle = new Obstacle(entityInfo.Location);
             
-            // Optionally decorate the Obstacle
-            entity = new IndestructibleObstacleDecorator(obstacle);
-        }
-        else
-        {
-            entity = factory.CreateCanvasObject(entityInfo);
-        }
-        if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
-        {
-            OnPlayerCreated?.Invoke(playerPixel);
-        }
-        entity.AddObjectToCanvas();
-        CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
-        _gameObjectsCollection.Add(entityInfo.Uuid, entity);
-    });
-}
+                // Optionally decorate the Obstacle
+                entity = new IndestructibleObstacleDecorator(obstacle);
+            }
+            else
+            {
+                entity = factory.CreateCanvasObject(entityInfo);
+            }
+            if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
+            {
+                OnPlayerCreated?.Invoke(playerPixel);
+            }
+            if (entityInfo.Name == "Giant" && entity is EnemyPixel enemyGiant)
+            {
+                giants.Add(enemyGiant);
+            }
+            if (entityInfo.Name == "Gnome" && entity is EnemyPixel enemyGnome)
+            {
+                gnomes.Add(enemyGnome);
+            }
+            entity.AddObjectToCanvas();
+            CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
+            _gameObjectsCollection.Add(entityInfo.Uuid, entity);
+        });
+    }
     private void RemoveObjectFromCanvas(string uuid)
     {
         RemoveIteratorObject(uuid);
@@ -261,20 +273,28 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
 
         while (iterator.HasNext())
         {
-            var iteratorObject = iterator.Next();
-            if (iteratorObject.GameObject is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
+            try
             {
-                await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
-                RemoveObjectFromCanvas(iteratorObject.Key);
+                var iteratorObject = iterator.Next();
+                if (iteratorObject.GameObject is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
+                {
+                    await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
+                    RemoveObjectFromCanvas(iteratorObject.Key);
+                    giants.Operation();
+                    gnomes.Operation();
+                    coinCount++;
+                    UpdateCoinCounter(); // Update the coin counter
 
-                coinCount++;
-                UpdateCoinCounter(); // Update the coin counter
-
-                break;
+                    break;
+                }
+                else if (iteratorObject.GameObject is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
+                {
+                    currentPlayer.DecreaseHealth(); // Decrease player health
+                }
             }
-            else if (iteratorObject.GameObject is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
+            catch (Exception e)
             {
-                currentPlayer.DecreaseHealth(); // Decrease player health
+
             }
         }
     }
@@ -301,7 +321,6 @@ private void AddEntityToLobbyClient(CanvasObjectInfo entityInfo)
             mainWindow.coinCounter.Text = $"Coins: {coinCount}";
         });
     }
-
     public void setWeaponProjectiles(WeaponType weapon)
     {
         if (weapon.ToString() == _weaponType.ToString()) return;

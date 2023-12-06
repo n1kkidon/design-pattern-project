@@ -20,7 +20,7 @@ namespace game_client.Iterator
         {
             if (_currentIndex <= 0 || _currentIndex > _collection.Count())
             {
-                throw new InvalidOperationException("Cannot remove item at current index.");
+                return;
             }
 
             // Remove the last returned item by Next()
