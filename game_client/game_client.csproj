@@ -8,6 +8,12 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Assets\obstacle.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\obstacle.png" />
+  </ItemGroup>
 
 
   <ItemGroup>

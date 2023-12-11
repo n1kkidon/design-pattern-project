@@ -2,6 +2,8 @@ namespace shared;
 
 public class CanvasObjectInfo
 {
+    public string imagePath;
+
     public required Vector2 Location {get; set;}
     public string? Name {get; set;}
     public required string Uuid {get; set;}

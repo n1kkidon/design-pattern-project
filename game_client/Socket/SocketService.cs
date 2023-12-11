@@ -115,11 +115,12 @@ public class SocketService
             // Check if the entity to be added is an Obstacle
             if (entityInfo.EntityType == EntityType.OBSTACLE)
             {
+                string imagePath = "./Assets/obstacle.png";
                 // Create an Obstacle instance
-                var obstacle = new Obstacle(entityInfo.Location);
+                entity = new Obstacle(entityInfo.Location, imagePath);
             
                 // Optionally decorate the Obstacle
-                entity = new IndestructibleObstacleDecorator(obstacle);
+                // entity = new IndestructibleObstacleDecorator(obstacle);
             }
             else
             {
