@@ -1,8 +1,8 @@
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 
-using Avalonia.Controls; // For Image control
-using Avalonia.Media.Imaging; // For Bitmap
+using Avalonia.Controls;
+using Avalonia.Media.Imaging; 
 
 using shared;
 using System;
@@ -11,28 +11,31 @@ namespace game_client.Models;
 // Obstacle base class
     public class Obstacle : GameObject
     {
-        public Image _image; // Changed from Shape to Image
+        public Image _image; 
+        private string _imagePath;
 
         public Obstacle(Vector2 location, string imagePath) : base(location)
         {
+            _imagePath = imagePath;
             _image = new Image();
+        }
 
-            try
+        public void LoadImage()
+        {
+            if(_image.Source == null) 
             {
-                // Load the image from the specified path
-                _image.Source = new Bitmap("./Assets/obstacle.png");
+                try
+                {
+                    _image.Source = new Bitmap(_imagePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading image: {ex.Message}");
+                }
+                _image.Width= 50;
+                _image.Height = 50;
+                AddToStackPanel(_image);
             }
-            catch (Exception ex)
-            {
-                // Handle exceptions (e.g., file not found)
-                Console.WriteLine($"Error loading image: {ex.Message}");
-            }
-
-            // Set the size of the image (you can adjust this as needed)
-            _image.Width = 20;
-            _image.Height = 100;
-
-            AddToStackPanel(_image);
         }
     }
 

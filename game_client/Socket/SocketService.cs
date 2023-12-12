@@ -112,15 +112,14 @@ public class SocketService
 
             GameObject entity;
         
-            // Check if the entity to be added is an Obstacle
             if (entityInfo.EntityType == EntityType.OBSTACLE)
             {
                 string imagePath = "./Assets/obstacle.png";
-                // Create an Obstacle instance
-                entity = new Obstacle(entityInfo.Location, imagePath);
+                
+                ObstacleProxy obs = new ObstacleProxy(new Obstacle(entityInfo.Location, imagePath));
+                entity = obs;
             
-                // Optionally decorate the Obstacle
-                // entity = new IndestructibleObstacleDecorator(obstacle);
+                obs.LoadImage();
             }
             else
             {
@@ -213,12 +212,12 @@ public class SocketService
                     }
             }
             projectile = projectileForAll.Clone() as Projectile;
-            Projectile shallowProjectile = projectileForAll.ShallowClone() as Projectile; // cia laikina, nes reikės ataskaitai
+            Projectile shallowProjectile = projectileForAll.ShallowClone() as Projectile; 
             projectile.AddObjectToCanvas();
 
-            Console.WriteLine($"Original Hash Code: {projectileForAll.GetHashCode()}"); // cia laikina, nes reikės ataskaitai 
-            Console.WriteLine($"Deep copy Hash Code: {projectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
-            Console.WriteLine($"Shallow Hash Code: {shallowProjectile.GetHashCode()}"); // cia laikina, nes reikės ataskaitai
+            Console.WriteLine($"Original Hash Code: {projectileForAll.GetHashCode()}"); 
+            Console.WriteLine($"Deep copy Hash Code: {projectile.GetHashCode()}"); 
+            Console.WriteLine($"Shallow Hash Code: {shallowProjectile.GetHashCode()}"); 
 
             game.OnTick += logic;
         });

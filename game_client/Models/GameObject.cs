@@ -137,7 +137,7 @@ public class GameObject
         Canvas.SetLeft(rect, locationOfCenter.X);
         MainWindow.GetInstance().canvas.Children.Add(rect);
     }
-    public void AddObjectToCanvas()
+    public virtual void AddObjectToCanvas()
     {
         MainWindow.GetInstance().canvas.Children.Add(stackPanel);
         //AddCenterDebugDot(Location, Colors.Blue); //initial pos
