@@ -4,6 +4,7 @@ using game_client.Views;
 using System;
 using Avalonia.Input;
 using shared;
+using game_client.ChainOfResponsability;
 
 namespace game_client.Models
 {
@@ -12,16 +13,31 @@ namespace game_client.Models
         private readonly MainWindow _mainWindow;
         private WeaponType currentWeapon;
         private PlayerPixel currentPlayer;
+        private IPlayerJoinHandler _joinChain;
+
         public GameFacade(MainWindow mainWindow)
         {
             _mainWindow = mainWindow;
+            SetupJoinChain();
+        }
+
+        private void SetupJoinChain()
+        {
+            _joinChain = new NameValidationHandler();
+            var weaponHandler = new WeaponValidationHandler();
+            _joinChain.SetNext(weaponHandler);
         }
 
         public void JoinAndStartGame(string name, WeaponType selectedWeapon)
         {
-            if (string.IsNullOrEmpty(name))
+            var request = new PlayerJoinRequest { Name = name, SelectedWeapon = selectedWeapon };
+            _joinChain.Handle(request);
+
+            if (!request.IsValid)
+            {
                 return;
-            currentWeapon = selectedWeapon;
+            }
+
             var _socketService = SocketService.GetInstance();
             var _game = Game.GetInstance();
             
