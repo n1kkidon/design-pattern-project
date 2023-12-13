@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using game_server.Memento;
 using game_server.Services;
 using Microsoft.AspNetCore.SignalR;
 using shared;
@@ -8,6 +9,8 @@ public class PlayerHub : Hub
     public static readonly ConcurrentDictionary<string, CanvasObjectInfo> CurrentCanvasItems = new();
     private static readonly Random rnd = new();
     private readonly CoinBackgroundService _coinService;
+    private static readonly ConcurrentDictionary<string, PlayerMemento> playerStates = new();
+
     public PlayerHub(CoinBackgroundService coinService)
     {
         _coinService = coinService;
@@ -31,25 +34,45 @@ public class PlayerHub : Hub
     }
 
     public async Task AddEntityToLobby(string name, RGB color, EntityType entityType, WeaponType weaponType)
-    {   
-        var info = new CanvasObjectInfo{
+    {
+        var uuid = entityType == EntityType.PLAYER ? Context.ConnectionId : Guid.NewGuid().ToString();
+        Vector2 location;
+
+        if (entityType == EntityType.PLAYER && playerStates.TryGetValue(name, out var savedState))
+        {
+            // Restore state from memento
+            var originator = new PlayerOriginator();
+            originator.RestoreFromMemento(savedState);
+            location = originator.Location;
+            // Restore other properties if needed
+        }
+        else
+        {
+            location = new Vector2(rnd.Next((int)(Constants.MapWidth * 0.9)),
+                                   rnd.Next((int)(Constants.MapHeight * 0.9)));
+        }
+
+        var info = new CanvasObjectInfo
+        {
             EntityType = entityType,
             Color = color,
             Name = name,
-            Uuid = entityType == EntityType.PLAYER ? Context.ConnectionId : Guid.NewGuid().ToString(),
-            Location = new(rnd.Next((int)(Constants.MapWidth*0.9)),
-                rnd.Next((int)(Constants.MapHeight*0.9))),
+            Uuid = uuid,
+            Location = location,
             WeaponType = weaponType
         };
+
         var freshJoined = CurrentCanvasItems.TryAdd(info.Uuid, info);
         var existingEntities = CurrentCanvasItems.Values.ToList();
-        await Clients.Others.SendAsync("AddEntityToLobbyClient", info); //player is displayed for other online clients
-        if(freshJoined && entityType == EntityType.PLAYER)
+        await Clients.Others.SendAsync("AddEntityToLobbyClient", info); // Player is displayed for other online clients
+
+        if (freshJoined && entityType == EntityType.PLAYER)
         {
-            foreach(var entity in existingEntities) 
-                await Clients.Caller.SendAsync("AddEntityToLobbyClient", entity); //all items are displayed for the new player
+            foreach (var entity in existingEntities)
+                await Clients.Caller.SendAsync("AddEntityToLobbyClient", entity); // All items are displayed for the new player
         }
-        else await Clients.Caller.SendAsync("AddEntityToLobbyClient", info);
+        else
+            await Clients.Caller.SendAsync("AddEntityToLobbyClient", info);
     }
 
     public async Task ProjectileShot(Vector2 direction, string weaponType)
@@ -81,13 +104,26 @@ public class PlayerHub : Hub
         await Clients.All.SendAsync("UpdateEntityPositionInClient", playerInfo.Location, Context.ConnectionId);
     }
 
-    public override Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        if (CurrentCanvasItems.TryGetValue(Context.ConnectionId, out var playerInfo) && playerInfo.EntityType == EntityType.PLAYER)
+        {
+            // Save player state to memento
+            var originator = new PlayerOriginator
+            {
+                Location = playerInfo.Location
+                // Add other properties to save if needed
+            };
+            playerStates[playerInfo.Name] = originator.SaveToMemento();
+        }
+
         CurrentCanvasItems.TryRemove(Context.ConnectionId, out _);
-        Clients.Others.SendAsync("RemoveObjectFromCanvas", Context.ConnectionId);
-        Console.WriteLine($"Client from {Context.GetHttpContext()?.Connection.RemoteIpAddress} disconnected from gamer server chat socket.");
-        return base.OnDisconnectedAsync(exception);
+        await Clients.Others.SendAsync("RemoveObjectFromCanvas", Context.ConnectionId);
+        Console.WriteLine($"Client from {Context.GetHttpContext()?.Connection.RemoteIpAddress} disconnected from game server chat socket.");
+        await base.OnDisconnectedAsync(exception);
     }
+
+
     public override Task OnConnectedAsync() //this really does nothing except display in server console that connection happened
     {
         try
