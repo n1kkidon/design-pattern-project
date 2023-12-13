@@ -1,17 +1,25 @@
-﻿using Avalonia.Media;
-using Avalonia.Controls.Shapes;
+﻿using Avalonia.Controls;
 using shared;
-using Avalonia.Controls;
-using game_client.Bridge;
 
 namespace game_client.Models
 {
     public class CoinView : GameObject
     {
-        public CoinView(Vector2 location, ObjectShape shape) : base(location)
+        private static readonly ImageFlyweightFactory ImageFactory = new ImageFlyweightFactory();
+
+        public CoinView(Vector2 location) : base(location)
         {
-            var objectToDraw = shape.Draw();
-            AddToStackPanel(objectToDraw);
+            string imagePath = "./Assets/coin.png";
+            var coinImage = new Image
+            {
+                Width = 22,
+                Height = 22,
+                Source = ImageFactory.GetImage(imagePath)
+            };
+
+
+
+            AddToStackPanel(coinImage);
         }
     }
 }
