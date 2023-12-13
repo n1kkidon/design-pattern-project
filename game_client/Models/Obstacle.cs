@@ -7,12 +7,13 @@ using Avalonia.Media.Imaging;
 using shared;
 using System;
 
-namespace game_client.Models;
-// Obstacle base class
+namespace game_client.Models
+{
     public class Obstacle : GameObject
     {
-        public Image _image; 
-        private string _imagePath;
+        public Image _image;
+        private static readonly ImageFlyweightFactory _imageFactory = new ImageFlyweightFactory();
+        private readonly string _imagePath;
 
         public Obstacle(Vector2 location, string imagePath) : base(location)
         {
@@ -22,22 +23,24 @@ namespace game_client.Models;
 
         public void LoadImage()
         {
-            if(_image.Source == null) 
+            if (_image.Source == null)
             {
-                try
+                _image.Source = _imageFactory.GetImage(_imagePath);
+
+                if (_image.Source != null)
                 {
-                    _image.Source = new Bitmap(_imagePath);
+                    _image.Width = 50;
+                    _image.Height = 50;
+                    AddToStackPanel(_image);
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Error loading image: {ex.Message}");
+                    Console.WriteLine("Error: Image could not be loaded.");
                 }
-                _image.Width= 50;
-                _image.Height = 50;
-                AddToStackPanel(_image);
             }
         }
     }
+}
 
 // Decorator abstract class
 // public abstract class ObstacleDecorator : Obstacle
