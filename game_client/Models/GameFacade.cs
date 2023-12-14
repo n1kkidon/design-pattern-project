@@ -5,6 +5,7 @@ using System;
 using Avalonia.Input;
 using shared;
 using game_client.ChainOfResponsability;
+using game_client.Models.CanvasItems;
 
 namespace game_client.Models
 {

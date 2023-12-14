@@ -1,13 +1,12 @@
+using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
-using shared;
-using game_client.Composite;
-using System;
-using game_client.Socket;
 using Avalonia.Threading;
+using game_client.Composite;
+using shared;
 
-namespace game_client.Models;
+namespace game_client.Models.CanvasItems;
 public class EnemyPixel : GameObject, IGameComponent
 {
     private TextBlock NameTag;

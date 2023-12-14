@@ -1,3 +1,4 @@
+using game_client.Models.CanvasItems;
 using shared;
 
 namespace game_client.Models

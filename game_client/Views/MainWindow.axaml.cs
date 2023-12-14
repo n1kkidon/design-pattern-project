@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using game_client.Models;
 using shared;
 using System;
+using game_client.Models.CanvasItems;
 using game_client.Socket;
 
 namespace game_client.Views;

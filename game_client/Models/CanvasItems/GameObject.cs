@@ -7,7 +7,7 @@ using Avalonia.Media;
 using game_client.Views;
 using shared;
 
-namespace game_client.Models;
+namespace game_client.Models.CanvasItems;
 
 public class GameObject
 {
@@ -141,7 +141,7 @@ public class GameObject
     public virtual void AddObjectToCanvas()
     {
         MainWindow.GetInstance().canvas.Children.Add(stackPanel);
-        AddCenterDebugDot(Location, Colors.Blue); //initial pos
+        //AddCenterDebugDot(Location, Colors.Blue); //initial pos
     } 
     public void RemoveObjectFromCanvas() => MainWindow.GetInstance().canvas.Children.Remove(stackPanel);
 

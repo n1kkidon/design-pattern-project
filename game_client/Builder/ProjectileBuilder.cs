@@ -1,5 +1,6 @@
 ﻿using Avalonia.Media;
 using game_client.Models;
+using game_client.Models.CanvasItems;
 using shared;
 
 namespace game_client.Builder

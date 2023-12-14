@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using game_client.Models.CanvasItems;
 using shared;
 
 namespace game_client.Template

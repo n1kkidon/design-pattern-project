@@ -169,6 +169,7 @@ public class PlayerHub : Hub
     private static bool CheckCollision(CanvasObjectInfo player, CanvasObjectInfo obj)
     {
         float extraPadding = 0;  // the extra area for detection
+        
 
         float halfWidthPlayer = player.Width / 2f + extraPadding;
         float halfHeightPlayer = player.Height / 2f + extraPadding;

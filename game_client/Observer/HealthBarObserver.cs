@@ -2,6 +2,7 @@
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using game_client.Models;
+using game_client.Models.CanvasItems;
 using game_client.Observer;
 
 public class HealthBarObserver : IObserver

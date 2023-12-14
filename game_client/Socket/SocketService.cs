@@ -12,6 +12,8 @@ using shared;
 using game_client.Builder;
 using game_client.Template;
 using game_client.Composite;
+using game_client.Models.CanvasItems;
+
 namespace game_client.Socket;
 
 public class SocketService
@@ -145,11 +147,6 @@ public class SocketService
             }
 
             entity.AddObjectToCanvas();
-            if (GetCurrentConnectionId().Equals(entityInfo.Uuid))
-            {
-                var dimensions = new Vector2(entity.GetWidth(), entity.GetHeight());
-                socket.SendAsync("DimensionsCallback", dimensions);
-            }
 
             CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
             //_gameObjectsCollection.Add(entityInfo.Uuid, entity);

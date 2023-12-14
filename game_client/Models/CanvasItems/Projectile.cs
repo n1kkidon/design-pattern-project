@@ -2,7 +2,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using shared;
 
-namespace game_client.Models;
+namespace game_client.Models.CanvasItems;
 
 public class Projectile : GameObject, ICloneable
 {
