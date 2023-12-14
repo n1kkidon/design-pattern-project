@@ -43,7 +43,7 @@ namespace game_client.Models
             
             // Reset the coin count and update the coin counter
             _socketService.ResetCoinCount();
-            _socketService.UpdateCoinCounter();
+            //_socketService.UpdateCoinCounter();
 
             // Generate a random color
             Random rnd = new Random();

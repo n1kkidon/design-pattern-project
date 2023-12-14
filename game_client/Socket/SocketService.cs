@@ -10,15 +10,13 @@ using game_client.Models;
 using game_client.Views;
 using shared;
 using game_client.Builder;
-using game_client.Bridge;
 using game_client.Template;
-using game_client.Iterator;
 using game_client.Composite;
 namespace game_client.Socket;
 
 public class SocketService
 {
-    private GameObjectCollection _gameObjectsCollection = new GameObjectCollection();
+    //private GameObjectCollection _gameObjectsCollection = new GameObjectCollection();
     public event Action<PlayerPixel> OnPlayerCreated;
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
     private readonly HubConnection socket;
@@ -29,7 +27,7 @@ public class SocketService
     Projectile originalProjectile;
     Team giants = new Team("Giants", true);
     Team gnomes = new Team("Gnomes", false);
-    private int coinCount;
+    //private int coinCount;
 
     private SocketService()
     {
@@ -40,15 +38,22 @@ public class SocketService
         .Build();   
         socket.On("AddEntityToLobbyClient", (CanvasObjectInfo p) => AddEntityToLobbyClient(p));
         socket.On("UpdateEntityPositionInClient", (Vector2 d, string uuid) => UpdateEntityPositionInClient(d, uuid));
+        socket.On("UpdateEntityHealthInClient", (int hpAmount, string uuid) => UpdateEntityHealthInClient(hpAmount, uuid));
         socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
         socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition, string weaponType) => UpdateOnProjectileInClient(direction, initialPosition, weaponType));
-
+        socket.On("UpdateCoinCounter", (int count) => UpdateCoinCounter(count));
+        socket.On("MobOperationsTemp", MobOperationsTemp);
 
         socket.StartAsync().Wait();
         Console.WriteLine("connected to server.");
-
-        coinCount = 0;
     }
+
+    private void MobOperationsTemp()
+    {
+        giants.Operation();
+        gnomes.Operation();
+    }
+
     public string GetCurrentConnectionId()
     {
         return socket.ConnectionId ?? "";
@@ -73,8 +78,8 @@ public class SocketService
     {
        await socket.SendAsync("AddObstacleToGame");
        await socket.SendAsync("AddEntityToLobby", name, new RGB(color.R, color.G, color.B), EntityType.PLAYER, weaponType);
-       await socket.SendAsync("AddEntityToLobby", $"Giant", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
-       await socket.SendAsync("AddEntityToLobby", $"Gnome", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
+       await socket.SendAsync("AddEntityToLobby", $"Giant", ConvertRgbToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
+       await socket.SendAsync("AddEntityToLobby", $"Gnome", ConvertRgbToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
     }
     public async Task AddOpponentToGame()
     {
@@ -92,10 +97,10 @@ public class SocketService
                 "Easy" => new EasyEnemyFactory(),
                 "Hard" => new HardEnemyFactory()
             };
-            var enemyPixel = enemyFactory.CreateEnemyPixel(combo.enemyType, ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), new Vector2());
+            var enemyPixel = enemyFactory.CreateEnemyPixel(combo.enemyType, ConvertRgbToAvaloniaColor(new RGB(255, 0, 0)), new Vector2());
             var enemyStats = enemyFactory.CreateEnemyStats(combo.enemyType);
 
-            await socket.SendAsync("AddEntityToLobby", $"{combo.difficulty}{combo.enemyType}", ConvertRGBToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
+            await socket.SendAsync("AddEntityToLobby", $"{combo.difficulty}{combo.enemyType}", ConvertRgbToAvaloniaColor(new RGB(255, 0, 0)), EntityType.ENEMY, WeaponType.HANDS);
 
             // We can send stats, pixel to anywhere else, in order to interact. Maybe adjust CanvasObjectInfo.cs, to take in health/damage.
 
@@ -129,40 +134,48 @@ public class SocketService
             {
                 OnPlayerCreated?.Invoke(playerPixel);
             }
-            if (entityInfo.Name == "Giant" && entity is EnemyPixel enemyGiant)
+            switch (entityInfo.Name)
             {
-                giants.Add(enemyGiant);
+                case "Giant" when entity is EnemyPixel enemyGiant:
+                    giants.Add(enemyGiant);
+                    break;
+                case "Gnome" when entity is EnemyPixel enemyGnome:
+                    gnomes.Add(enemyGnome);
+                    break;
             }
-            if (entityInfo.Name == "Gnome" && entity is EnemyPixel enemyGnome)
-            {
-                gnomes.Add(enemyGnome);
-            }
+
             entity.AddObjectToCanvas();
+            if (GetCurrentConnectionId().Equals(entityInfo.Uuid))
+            {
+                var dimensions = new Vector2(entity.GetWidth(), entity.GetHeight());
+                socket.SendAsync("DimensionsCallback", dimensions);
+            }
+
             CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
-            _gameObjectsCollection.Add(entityInfo.Uuid, entity);
+            //_gameObjectsCollection.Add(entityInfo.Uuid, entity);
         });
     }
     private void RemoveObjectFromCanvas(string uuid)
     {
-        RemoveIteratorObject(uuid);
+        //RemoveIteratorObject(uuid);
         CurrentCanvasObjects.TryRemove(uuid, out var entity);
         if(entity != null)
             Dispatcher.UIThread.Invoke(entity.RemoveObjectFromCanvas);
     }
 
-    private void RemoveIteratorObject(string uuid)
-    {
-        var iterator = _gameObjectsCollection.CreateIterator();
-        while (iterator.HasNext())
-        {
-            var current = iterator.Next();
-            if (current.Key == uuid)
-            {
-                iterator.Remove();
-                break;
-            }
-        }
-    }
+    // private void RemoveIteratorObject(string uuid)
+    // {
+    //     var iterator = _gameObjectsCollection.CreateIterator();
+    //     while (iterator.HasNext())
+    //     {
+    //         var current = iterator.Next();
+    //         if (current.Key == uuid)
+    //         {
+    //             iterator.Remove();
+    //             break;
+    //         }
+    //     }
+    // }
 
     private async void UpdateEntityPositionInClient(Vector2 direction, string uuid)
     {
@@ -170,7 +183,16 @@ public class SocketService
         {
             var playerpxl = CurrentCanvasObjects[uuid];
             playerpxl.TeleportTo(direction);
-            await CheckForObjectCollision((PlayerPixel)playerpxl);
+            //await CheckForObjectCollision((PlayerPixel)playerpxl);
+        });
+    }
+    
+    private async void UpdateEntityHealthInClient(int amount, string uuid)
+    {
+        await Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            var playerpxl = CurrentCanvasObjects[uuid];
+            ((PlayerPixel)playerpxl).DecreaseHealth(amount); //TODO: move DecreaseHealth() to a shared object between animate objects
         });
     }
 
@@ -214,10 +236,7 @@ public class SocketService
             projectile = projectileForAll.Clone() as Projectile;
             Projectile shallowProjectile = projectileForAll.ShallowClone() as Projectile; 
             projectile.AddObjectToCanvas();
-
-            Console.WriteLine($"Original Hash Code: {projectileForAll.GetHashCode()}"); 
-            Console.WriteLine($"Deep copy Hash Code: {projectile.GetHashCode()}"); 
-            Console.WriteLine($"Shallow Hash Code: {shallowProjectile.GetHashCode()}"); 
+            
 
             game.OnTick += logic;
         });
@@ -267,58 +286,58 @@ public class SocketService
         return new Vector2(currentX, currentY);
     }
 
-    public async Task CheckForObjectCollision(PlayerPixel currentPlayer)
-    {
-        var iterator = _gameObjectsCollection.CreateIterator();
+    // public async Task CheckForObjectCollision(PlayerPixel currentPlayer)
+    // {
+    //     var iterator = _gameObjectsCollection.CreateIterator();
+    //
+    //     while (iterator.HasNext())
+    //     {
+    //         try
+    //         {
+    //             var iteratorObject = iterator.Next();
+    //             if (iteratorObject.GameObject is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
+    //             {
+    //                 await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
+    //                 RemoveObjectFromCanvas(iteratorObject.Key);
+    //                 giants.Operation();
+    //                 gnomes.Operation();
+    //                 coinCount++;
+    //                 UpdateCoinCounter(coinCount); // Update the coin counter
+    //
+    //                 break;
+    //             }
+    //             else if (iteratorObject.GameObject is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
+    //             {
+    //                 currentPlayer.DecreaseHealth(); // Decrease player health
+    //             }
+    //         }
+    //         catch (Exception e)
+    //         {
+    //             Console.WriteLine($"[ERROR] {e.Message} {e.StackTrace}");
+    //         }
+    //     }
+    // }
+    //
+    // private bool CheckCollision(PlayerPixel player, GameObject coin)
+    // {
+    //     float extraPadding = 0;  // the extra area for detection
+    //
+    //     float halfWidthPlayer = player.GetWidth() / 2f + extraPadding;
+    //     float halfHeightPlayer = player.GetHeight() / 2f + extraPadding;
+    //     float halfWidthObject = coin.GetWidth() / 2f + extraPadding;
+    //     float halfHeightObject = coin.GetHeight() / 2f + extraPadding;
+    //
+    //     return Math.Abs(player.Location.X - coin.Location.X) < (halfWidthPlayer + halfWidthObject) &&
+    //            Math.Abs(player.Location.Y - coin.Location.Y) < (halfHeightPlayer + halfHeightObject);
+    // }
 
-        while (iterator.HasNext())
-        {
-            try
-            {
-                var iteratorObject = iterator.Next();
-                if (iteratorObject.GameObject is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
-                {
-                    await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
-                    RemoveObjectFromCanvas(iteratorObject.Key);
-                    giants.Operation();
-                    gnomes.Operation();
-                    coinCount++;
-                    UpdateCoinCounter(); // Update the coin counter
-
-                    break;
-                }
-                else if (iteratorObject.GameObject is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
-                {
-                    currentPlayer.DecreaseHealth(); // Decrease player health
-                }
-            }
-            catch (Exception e)
-            {
-
-            }
-        }
-    }
-
-    private bool CheckCollision(PlayerPixel player, GameObject coin)
-    {
-        float extraPadding = 0;  // the extra area for detection
-
-        float halfWidthPlayer = player.GetWidth() / 2f + extraPadding;
-        float halfHeightPlayer = player.GetHeight() / 2f + extraPadding;
-        float halfWidthObject = coin.GetWidth() / 2f + extraPadding;
-        float halfHeightObject = coin.GetHeight() / 2f + extraPadding;
-
-        return Math.Abs(player.Location.X - coin.Location.X) < (halfWidthPlayer + halfWidthObject) &&
-               Math.Abs(player.Location.Y - coin.Location.Y) < (halfHeightPlayer + halfHeightObject);
-    }
-
-    public void UpdateCoinCounter()
+    private void UpdateCoinCounter(int count)
     {
         // Update the UI with the current coin count
         Dispatcher.UIThread.InvokeAsync(() =>
         {
             var mainWindow = MainWindow.GetInstance();
-            mainWindow.coinCounter.Text = $"Coins: {coinCount}";
+            mainWindow.coinCounter.Text = $"Coins: {count}";
         });
     }
     public void setWeaponProjectiles(WeaponType weapon)
@@ -360,17 +379,14 @@ public class SocketService
         }
         
     }
-    public IGameObjectIterator GetGameObjectIterator()
-    {
-        return _gameObjectsCollection.CreateIterator();
-    }
+    // public IGameObjectIterator GetGameObjectIterator()
+    // {
+    //     return _gameObjectsCollection.CreateIterator();
+    // }
 
-    public void ResetCoinCount()
-    {
-        coinCount = 0; // Reset the coin count
-    }
+    public void ResetCoinCount() => UpdateCoinCounter(0);
 
-    public Avalonia.Media.Color ConvertRGBToAvaloniaColor(RGB rgb)
+    private static Avalonia.Media.Color ConvertRgbToAvaloniaColor(RGB rgb)
     {
         return Avalonia.Media.Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
     }

@@ -14,7 +14,7 @@ public class EnemyPixel : GameObject, IGameComponent
     protected Ellipse Pixel;
     private string _name;
     private int _size = 16;
-    public EnemyPixel(string name, Color color, Vector2 location) : base(location){ //initial location 
+    public EnemyPixel(string name, Color color, Vector2 location, int health) : base(location){ //initial location 
         _name = name;
         NameTag = new(){
             Foreground = new SolidColorBrush(Colors.White),

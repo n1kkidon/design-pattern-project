@@ -1,25 +1,20 @@
-﻿using game_client.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using shared;
 
-namespace game_client.Iterator
+namespace game_server.Iterator
 {
     public class GameObjectCollection : IAggregate
     {
-        private List<GameObjectWithKey> _items = new List<GameObjectWithKey>();
+        private readonly List<GameObjectWithKey> _items = new List<GameObjectWithKey>();
 
         // Method to add a GameObject with its associated key
-        public void Add(string key, GameObject gameObject)
+        public void Add(string key, CanvasObjectInfo gameObject)
         {
             _items.Add(new GameObjectWithKey(key, gameObject));
         }
         public void Remove(string key)
         {
             var itemToRemove = _items.FirstOrDefault(item => item.Key == key);
-            if (itemToRemove.GameObject != null)
+            if (itemToRemove.ObjectInfo != null)
             {
                 _items.Remove(itemToRemove);
             }

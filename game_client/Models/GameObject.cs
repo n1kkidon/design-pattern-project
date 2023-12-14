@@ -37,7 +37,7 @@ public class GameObject
     /// 
     /// </summary>
     /// <param name="control"></param>
-    /// <param name="ignoreDimensions">whether this objects dimensionos will contribute towards total height/width</param>
+    /// <param name="ignoreDimensions">whether this objects dimensions will contribute towards total height/width</param>
     protected void AddToStackPanel(Control control, bool ignoreDimensions = false)
     {
         if(control is TextBlock NameTag)
@@ -58,7 +58,7 @@ public class GameObject
     }
 
     /// <summary>
-    /// summs up all the heights of child objects
+    /// sums up all the heights of child objects
     /// </summary>
     /// <returns></returns>
     public float GetHeight()
@@ -86,7 +86,7 @@ public class GameObject
     }
 
     /// <summary>
-    /// summs up all the heights of child objects (that have height)
+    /// sums up all the heights of child objects (that have height)
     /// </summary>
     /// <param name="initial"></param>
     /// <returns></returns>
@@ -101,6 +101,7 @@ public class GameObject
             if(double.IsNaN(child.Height))
                 continue;
             total += child.Height;
+            
         }
         initialHeight ??= (float)total;
         return (float)total;
@@ -140,7 +141,7 @@ public class GameObject
     public virtual void AddObjectToCanvas()
     {
         MainWindow.GetInstance().canvas.Children.Add(stackPanel);
-        //AddCenterDebugDot(Location, Colors.Blue); //initial pos
+        AddCenterDebugDot(Location, Colors.Blue); //initial pos
     } 
     public void RemoveObjectFromCanvas() => MainWindow.GetInstance().canvas.Children.Remove(stackPanel);
 

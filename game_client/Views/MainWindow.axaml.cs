@@ -4,9 +4,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using game_client.Models;
 using shared;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Sockets;
-using System.IO;
 using System;
 using game_client.Socket;
 

@@ -12,8 +12,8 @@ namespace game_client.Models
             string imagePath = "./Assets/coin.png";
             var coinImage = new Image
             {
-                Width = 22,
-                Height = 22,
+                Width = Constants.CoinDimensions.X,
+                Height = Constants.CoinDimensions.Y,
                 Source = ImageFactory.GetImage(imagePath)
             };
 

@@ -1,4 +1,3 @@
-using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -15,19 +14,21 @@ namespace game_client.Models
     public class PlayerPixel : GameObject, ISubject
     {
         private IPlayerState _currentState;
-        private TextBlock NameTag;
-        private Image PlayerAvatar; 
-        private Rectangle HealthBar;
-        private ShootAlgorithm _shootAlgorithm;
-        public ShootAlgorithm ShootAlgorithm => _shootAlgorithm;
-        SocketService _socketService = SocketService.GetInstance();
+        private readonly TextBlock NameTag;
+        private readonly Image PlayerAvatar; 
+        private readonly Rectangle HealthBar;
+        public ShootAlgorithm ShootAlgorithm { get; private set; }
 
-        private int health = 10;
+        private readonly SocketService _socketService = SocketService.GetInstance();
 
-        public PlayerPixel(string name, Color color, Vector2 location) : base(location)
+        private int health;
+
+        //TODO: remove colors
+        public PlayerPixel(string name, Color color, Vector2 location, int health) : base(location)
         {
-            _shootAlgorithm = new Pistol(_socketService); 
-            NameTag = new TextBlock
+            ShootAlgorithm = new Pistol(_socketService);
+            this.health = health;
+            NameTag = new()
             {
                 Foreground = new SolidColorBrush(Colors.White),
                 Text = name,
@@ -35,10 +36,10 @@ namespace game_client.Models
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
             };
 
-            PlayerAvatar = new Image
+            PlayerAvatar = new()
             {
-                Width = 30,
-                Height = 30
+                Width = Constants.PlayerDimensions.X,
+                Height = Constants.PlayerDimensions.Y
             };
 
             try
@@ -53,7 +54,7 @@ namespace game_client.Models
             AddToStackPanel(NameTag, true);
             AddToStackPanel(PlayerAvatar);
 
-            HealthBar = new Rectangle
+            HealthBar = new()
             {
                 Width = 30,
                 Height = 10,
@@ -61,12 +62,12 @@ namespace game_client.Models
             };
             AddToStackPanel(HealthBar, true);
 
-            new HealthBarObserver(this, HealthBar);
-
+            new HealthBarObserver(this, HealthBar).Update(health);
+            
             _currentState = new NormalState(this);
         }
 
-        private List<IObserver> observers = new List<IObserver>();
+        private readonly List<IObserver> observers = new List<IObserver>();
         public void RegisterObserver(IObserver observer)
         {
             observers.Add(observer);
@@ -85,13 +86,19 @@ namespace game_client.Models
             }
         }
 
-        public void DecreaseHealth()
+        public void DecreaseHealth(int amount)
         {
-            if (health > 0)
+            if (health - amount >= 0)
             {
-                health--;
-                NotifyObservers();
+                health-=amount;
             }
+            else
+            {
+                health = 0;
+                Console.WriteLine("DEAD"); //TODO: make him actually dead
+            }
+            
+            NotifyObservers();
             CheckForStateTransition();
         }
 
@@ -109,7 +116,7 @@ namespace game_client.Models
 
         public void SetShootingAlgorithm(ShootAlgorithm shootAlgo)
         {
-            _shootAlgorithm = shootAlgo;
+            ShootAlgorithm = shootAlgo;
         }
 
         public async void Shoot(IVector2 position)

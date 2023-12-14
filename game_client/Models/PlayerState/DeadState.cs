@@ -22,7 +22,7 @@ namespace game_client.Models.PlayerState
             Console.WriteLine("Dead players can't shoot.");
         }
 
-        public void TakeDamage()
+        public void TakeDamage(int amount)
         {
             // Dead players don't take damage
         }

@@ -29,8 +29,8 @@ namespace game_client.Models
 
                 if (_image.Source != null)
                 {
-                    _image.Width = 50;
-                    _image.Height = 50;
+                    _image.Width = Constants.ObstacleDimensionsTree.X;
+                    _image.Height = Constants.ObstacleDimensionsTree.Y;
                     AddToStackPanel(_image);
                 }
                 else
@@ -38,6 +38,8 @@ namespace game_client.Models
                     Console.WriteLine("Error: Image could not be loaded.");
                 }
             }
+            
+            Console.WriteLine(new Vector2(GetWidth(), GetHeight()));
         }
     }
 }

@@ -9,7 +9,7 @@ namespace game_client.AbstractFactory
         private Random _random = new Random();
 
         public BasicEnemyPixel(string name, Avalonia.Media.Color color, Vector2 location)
-            : base(name, color, location)
+            : base(name, color, location, 10)
         {
 
         }

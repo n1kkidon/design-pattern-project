@@ -22,9 +22,9 @@ namespace game_client.Models.PlayerState
             _player.ShootAlgorithm.Shoot(position);
         }
 
-        public void TakeDamage()
+        public void TakeDamage(int amount)
         {
-            _player.DecreaseHealth();
+            _player.DecreaseHealth(amount);
         }
     }
 }

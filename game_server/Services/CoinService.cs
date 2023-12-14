@@ -29,6 +29,7 @@ public class CoinBackgroundService : BackgroundService
                 Uuid = Guid.NewGuid().ToString(),
             };
             PlayerHub.CurrentCanvasItems[info.Uuid] = info;
+            PlayerHub.GameObjectsCollection.Add(info.Uuid, info);
             await _hubContext.Clients.All.SendAsync("AddEntityToLobbyClient", info);
             await Task.Delay(TimeSpan.FromSeconds(_random.Next(10, 21)), stoppingToken);
         }
@@ -38,6 +39,7 @@ public class CoinBackgroundService : BackgroundService
     {
         if (PlayerHub.CurrentCanvasItems.TryRemove(coinId, out _))
         {
+            PlayerHub.RemoveIteratorObject(coinId);
             await _hubContext.Clients.All.SendAsync("RemoveObjectFromCanvas", coinId);
         }
     }

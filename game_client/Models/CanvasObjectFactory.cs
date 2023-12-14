@@ -14,10 +14,10 @@ public class CanvasObjectFactory
         {
             EntityType.COIN => new CoinView(info.Location),
             EntityType.PLAYER => new PlayerPixel(info.Name!, 
-                Color.FromRgb(info.Color!.R, info.Color.G, info.Color.B), info.Location),
+                Color.FromRgb(info.Color!.R, info.Color.G, info.Color.B), info.Location, info.Health),
             EntityType.ENEMY => new EnemyPixel(info.Name!, 
-                Color.FromRgb(info.Color!.R, info.Color.G, info.Color.B), info.Location),
-            EntityType.OBSTACLE => new Obstacle(info.Location, info.imagePath),
+                Color.FromRgb(info.Color!.R, info.Color.G, info.Color.B), info.Location, info.Health),
+            EntityType.OBSTACLE => new Obstacle(info.Location, info.ImagePath),
             _ => throw new ArgumentException("Invalid GameObject type."),
         };
     }

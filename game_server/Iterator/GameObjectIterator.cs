@@ -1,15 +1,8 @@
-﻿using game_client.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace game_client.Iterator
+﻿namespace game_server.Iterator
 {
     public class GameObjectIterator : IGameObjectIterator
     {
-        private GameObjectCollection _collection;
+        private readonly GameObjectCollection _collection;
         private int _currentIndex = 0;
 
         public GameObjectIterator(GameObjectCollection collection)
