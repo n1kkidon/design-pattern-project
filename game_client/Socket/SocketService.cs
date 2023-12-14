@@ -20,7 +20,7 @@ namespace game_client.Socket;
 public class SocketService : BaseComponent
 {
     //private GameObjectCollection _gameObjectsCollection = new GameObjectCollection();
-    public event Action<PlayerPixel, IMediator> OnPlayerCreated;
+    public event Action<PlayerPixel, IMediator, int> OnPlayerCreated;
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
@@ -40,7 +40,7 @@ public class SocketService : BaseComponent
         socket.On("UpdateEntityHealthInClient", (int hpAmount, string uuid, string eUuid) => UpdateEntityHealthInClient(hpAmount, uuid, eUuid));
         socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
         socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition, string weaponType) => UpdateOnProjectileInClient(direction, initialPosition, weaponType));
-        socket.On("UpdateCoinCounter", (int count) => UpdateCoinCounter(count));
+        socket.On("UpdateCoinCounter", (int count) => Mediator.Notify(this, "UpdateCoinCounter", count));
         socket.On("MobOperationsTemp", MobOperationsTemp);
 
         socket.StartAsync().Wait();
@@ -126,7 +126,7 @@ public class SocketService : BaseComponent
             }
             if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
             {
-                OnPlayerCreated?.Invoke(playerPixel, Mediator);
+                OnPlayerCreated?.Invoke(playerPixel, Mediator, entityInfo.CoinCount);
             }
             switch (entityInfo.Name)
             {
@@ -301,17 +301,15 @@ public class SocketService : BaseComponent
     }
     
 
-    private void UpdateCoinCounter(int count)
-    {
-        // Update the UI with the current coin count
-        Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            var mainWindow = MainWindow.GetInstance();
-            mainWindow.coinCounter.Text = $"Coins: {count}";
-        });
-    }
-
-    public void ResetCoinCount() => UpdateCoinCounter(0);
+    // public void UpdateCoinCounter(int count)
+    // {
+    //     // Update the UI with the current coin count
+    //     Dispatcher.UIThread.InvokeAsync(() =>
+    //     {
+    //         var mainWindow = MainWindow.GetInstance();
+    //         mainWindow.coinCounter.Text = $"Coins: {count}";
+    //     });
+    // }
 
     private static Color ConvertRgbToAvaloniaColor(RGB rgb)
     {

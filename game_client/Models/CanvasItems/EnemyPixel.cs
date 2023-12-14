@@ -104,36 +104,26 @@ public class EnemyPixel : GameObject, IGameComponent
         // Move the enemy by one pixel in a random direction
         Random rnd = new Random();
         int direction = rnd.Next(4);
-
-
         Dispatcher.UIThread.InvokeAsync(() =>
         {
             switch (direction)
             {
                 case 0:
-                    {
                         NameTag.Text = "Chameleon";
                         NameTag.Foreground = new SolidColorBrush(Colors.ForestGreen);
                         break;
-                    }
                 case 1:
-                    {
                         NameTag.Text = "Chameleon";
                         NameTag.Foreground = new SolidColorBrush(Colors.Brown);
                         break;
-                    }
                 case 2:
-                    {
                         NameTag.Text = "Chameleon";
                         NameTag.Foreground = new SolidColorBrush(Colors.Cyan);
                         break;
-                    }
                 case 3:
-                    {
                         NameTag.Text = "Chameleon";
                         NameTag.Foreground = new SolidColorBrush(Colors.Violet);
                         break;
-                    }
             }
             Pixel.InvalidateVisual();
         });
