@@ -12,26 +12,23 @@ using shared;
 using game_client.Builder;
 using game_client.Template;
 using game_client.Composite;
+using game_client.Mediator;
 using game_client.Models.CanvasItems;
 
 namespace game_client.Socket;
 
-public class SocketService
+public class SocketService : BaseComponent
 {
     //private GameObjectCollection _gameObjectsCollection = new GameObjectCollection();
-    public event Action<PlayerPixel> OnPlayerCreated;
+    public event Action<PlayerPixel, IMediator> OnPlayerCreated;
     private readonly ConcurrentDictionary<string, GameObject> CurrentCanvasObjects = new();
     private readonly HubConnection socket;
     private readonly CanvasObjectFactory factory;
-    private WeaponType _weaponType = WeaponType.HANDS;
-    IProjectileBuilder builder = new ProjectileBuilder();
-    ProjectileDirector director = new ProjectileDirector();
-    Projectile originalProjectile;
     Team giants = new Team("Giants", true);
     Team gnomes = new Team("Gnomes", false);
     //private int coinCount;
 
-    private SocketService()
+    public SocketService()
     {
         var url = Constants.ServerIP;
         factory = new();
@@ -60,12 +57,7 @@ public class SocketService
     {
         return socket.ConnectionId ?? "";
     }
-    private static SocketService? instance;
-    public static SocketService GetInstance()
-    {
-        instance ??= new();
-        return instance;
-    }
+
     public async Task OnCurrentPlayerShoot(IVector2 direction, WeaponType weaponType)
     {
         await socket.InvokeAsync("ProjectileShot", direction.ToVector2(), weaponType.ToString());
@@ -134,7 +126,7 @@ public class SocketService
             }
             if (entityInfo.EntityType == EntityType.PLAYER && entity is PlayerPixel playerPixel)
             {
-                OnPlayerCreated?.Invoke(playerPixel);
+                OnPlayerCreated?.Invoke(playerPixel, Mediator);
             }
             switch (entityInfo.Name)
             {
@@ -149,30 +141,14 @@ public class SocketService
             entity.AddObjectToCanvas();
 
             CurrentCanvasObjects.TryAdd(entityInfo.Uuid, entity);
-            //_gameObjectsCollection.Add(entityInfo.Uuid, entity);
         });
     }
     private void RemoveObjectFromCanvas(string uuid)
     {
-        //RemoveIteratorObject(uuid);
         CurrentCanvasObjects.TryRemove(uuid, out var entity);
         if(entity != null)
             Dispatcher.UIThread.Invoke(entity.RemoveObjectFromCanvas);
     }
-
-    // private void RemoveIteratorObject(string uuid)
-    // {
-    //     var iterator = _gameObjectsCollection.CreateIterator();
-    //     while (iterator.HasNext())
-    //     {
-    //         var current = iterator.Next();
-    //         if (current.Key == uuid)
-    //         {
-    //             iterator.Remove();
-    //             break;
-    //         }
-    //     }
-    // }
 
     private async void UpdateEntityPositionInClient(Vector2 direction, string uuid)
     {
@@ -180,7 +156,6 @@ public class SocketService
         {
             var playerpxl = CurrentCanvasObjects[uuid];
             playerpxl.TeleportTo(direction);
-            //await CheckForObjectCollision((PlayerPixel)playerpxl);
         });
     }
     
@@ -195,9 +170,10 @@ public class SocketService
 
     private async void UpdateOnProjectileInClient(Vector2 direction, Vector2 initialPosition, string weaponType) //TODO: change direction from click location to final (colide) location
     {
-        var game = Game.GetInstance();
         Projectile projectile;
         Projectile projectileForAll;
+        IProjectileBuilder builder = new ProjectileBuilder();
+        ProjectileDirector director = new ProjectileDirector();
 
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
@@ -231,11 +207,10 @@ public class SocketService
                     }
             }
             projectile = projectileForAll.Clone() as Projectile;
-            Projectile shallowProjectile = projectileForAll.ShallowClone() as Projectile; 
+            //Projectile shallowProjectile = projectileForAll.ShallowClone() as Projectile; 
             projectile.AddObjectToCanvas();
             
-
-            game.OnTick += logic;
+            Mediator.Notify(this, "SubscribeToGame_OnTick", logic);
         });
         async void logic()
         {
@@ -253,7 +228,8 @@ public class SocketService
 
             if (distanceRemaining < Constants.ProjectileDistPerTick)
             {
-                game.OnTick -= logic; //TODO: destroy projectile when it hits something
+                //game.OnTick -= logic; //TODO: destroy projectile when it hits something
+                await Mediator.Notify(this, "UnsubscribeFromGame_OnTick", logic);
             }
             else
             {
@@ -282,51 +258,7 @@ public class SocketService
         float currentY = startPosition.Y + dy * Constants.ProjectileDistPerTick;
         return new Vector2(currentX, currentY);
     }
-
-    // public async Task CheckForObjectCollision(PlayerPixel currentPlayer)
-    // {
-    //     var iterator = _gameObjectsCollection.CreateIterator();
-    //
-    //     while (iterator.HasNext())
-    //     {
-    //         try
-    //         {
-    //             var iteratorObject = iterator.Next();
-    //             if (iteratorObject.GameObject is CoinView view && CheckCollision(currentPlayer, view)) //TODO: this entire method should happen in the server
-    //             {
-    //                 await socket.InvokeAsync("PickupCoin", iteratorObject.Key);
-    //                 RemoveObjectFromCanvas(iteratorObject.Key);
-    //                 giants.Operation();
-    //                 gnomes.Operation();
-    //                 coinCount++;
-    //                 UpdateCoinCounter(coinCount); // Update the coin counter
-    //
-    //                 break;
-    //             }
-    //             else if (iteratorObject.GameObject is EnemyPixel enemy && CheckCollision(currentPlayer, enemy))
-    //             {
-    //                 currentPlayer.DecreaseHealth(); // Decrease player health
-    //             }
-    //         }
-    //         catch (Exception e)
-    //         {
-    //             Console.WriteLine($"[ERROR] {e.Message} {e.StackTrace}");
-    //         }
-    //     }
-    // }
-    //
-    // private bool CheckCollision(PlayerPixel player, GameObject coin)
-    // {
-    //     float extraPadding = 0;  // the extra area for detection
-    //
-    //     float halfWidthPlayer = player.GetWidth() / 2f + extraPadding;
-    //     float halfHeightPlayer = player.GetHeight() / 2f + extraPadding;
-    //     float halfWidthObject = coin.GetWidth() / 2f + extraPadding;
-    //     float halfHeightObject = coin.GetHeight() / 2f + extraPadding;
-    //
-    //     return Math.Abs(player.Location.X - coin.Location.X) < (halfWidthPlayer + halfWidthObject) &&
-    //            Math.Abs(player.Location.Y - coin.Location.Y) < (halfHeightPlayer + halfHeightObject);
-    // }
+    
 
     private void UpdateCoinCounter(int count)
     {
@@ -337,55 +269,12 @@ public class SocketService
             mainWindow.coinCounter.Text = $"Coins: {count}";
         });
     }
-    public void setWeaponProjectiles(WeaponType weapon)
-    {
-        if (weapon.ToString() == _weaponType.ToString()) return;
-        Console.WriteLine(weapon.ToString());
-        switch (weapon)
-        {
-            case WeaponType.PISTOL:
-                {
-                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
-                    _weaponType = WeaponType.PISTOL;
-                    break;
-                }
-            case WeaponType.SNIPER:
-                {
-                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.Red, 6, 6);
-                    _weaponType = WeaponType.SNIPER;
-                    break;
-                }
-            case WeaponType.ROCKET:
-                {
-                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.OrangeRed, 15, 15);
-                    _weaponType = WeaponType.ROCKET;
-                    break;
-                }
-            case WeaponType.CANNON:
-                {
-                    var cannonCreator = new CannonProjectileCreation();
-                    originalProjectile = cannonCreator.CreateProjectile(new Vector2(0, 0));
-                    _weaponType = WeaponType.CANNON;
-                    break;
-                }
-            default:
-                {
-                    originalProjectile = director.Construct(builder, new Vector2(0, 0), Colors.AliceBlue, 10, 10);
-                    break;
-                }
-        }
-        
-    }
-    // public IGameObjectIterator GetGameObjectIterator()
-    // {
-    //     return _gameObjectsCollection.CreateIterator();
-    // }
 
     public void ResetCoinCount() => UpdateCoinCounter(0);
 
-    private static Avalonia.Media.Color ConvertRgbToAvaloniaColor(RGB rgb)
+    private static Color ConvertRgbToAvaloniaColor(RGB rgb)
     {
-        return Avalonia.Media.Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
+        return Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
     }
 
 }

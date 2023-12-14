@@ -4,7 +4,8 @@ using game_client.Views;
 using System;
 using Avalonia.Input;
 using shared;
-using game_client.ChainOfResponsability;
+using game_client.ChainOfResponsibility;
+using game_client.Mediator;
 using game_client.Models.CanvasItems;
 
 namespace game_client.Models
@@ -12,9 +13,9 @@ namespace game_client.Models
     public class GameFacade
     {
         private readonly MainWindow _mainWindow;
-        private WeaponType currentWeapon;
         private PlayerPixel currentPlayer;
         private IPlayerJoinHandler _joinChain;
+        public WeaponType WeaponType { get; set; }
 
         public GameFacade(MainWindow mainWindow)
         {
@@ -22,28 +23,37 @@ namespace game_client.Models
             SetupJoinChain();
         }
 
+        private void HandlePlayerCreated(PlayerPixel player, IMediator mediator)
+        {
+            SetCurrentPlayer(player, WeaponType, mediator);
+        }
+        
         private void SetupJoinChain()
         {
             _joinChain = new NameValidationHandler();
-            var weaponHandler = new WeaponValidationHandler();
-            _joinChain.SetNext(weaponHandler);
+            
+            _joinChain.SetNext(new WeaponValidationHandler())
+                .SetNext(new UiChangeHandler(_mainWindow));
         }
 
-        public void JoinAndStartGame(string name, WeaponType selectedWeapon)
+        public void JoinAndStartGame(string? name)
         {
-            var request = new PlayerJoinRequest { Name = name, SelectedWeapon = selectedWeapon };
+            var request = new PlayerJoinRequest { Name = name, SelectedWeapon = WeaponType };
             _joinChain.Handle(request);
 
             if (!request.IsValid)
             {
                 return;
             }
-
-            var _socketService = SocketService.GetInstance();
-            var _game = Game.GetInstance();
             
+            
+            var socketService = new SocketService();
+            var game = new Game();
+            var mediator = new ConcreteMediator(socketService, game, _mainWindow);
+                
+            socketService.OnPlayerCreated += HandlePlayerCreated;
             // Reset the coin count and update the coin counter
-            _socketService.ResetCoinCount();
+            socketService.ResetCoinCount();
             //_socketService.UpdateCoinCounter();
 
             // Generate a random color
@@ -52,46 +62,45 @@ namespace game_client.Models
                 rnd.Next(256), rnd.Next(256), rnd.Next(256));
             Avalonia.Media.Color randomAvaloniaColor = ColorAdapter.ToAvaloniaColor(randomDrawingColor);
 
-            _socketService.JoinGameLobby(name, randomAvaloniaColor, currentWeapon).Wait();
-            _socketService.AddOpponentToGame().Wait();
+            socketService.JoinGameLobby(name!, randomAvaloniaColor, WeaponType).Wait();
+            socketService.AddOpponentToGame().Wait();
 
             //keymaps
-            InputHandler.SetCommand(Key.W, new MoveUpCommand(false, _game));
-            InputHandler.SetCommand(Key.A, new MoveLeftCommand(false, _game));
-            InputHandler.SetCommand(Key.S, new MoveDownCommand(false, _game));
-            InputHandler.SetCommand(Key.D, new MoveRightCommand(false, _game));
+            InputHandler.SetCommand(Key.W, new MoveUpCommand(false, game));
+            InputHandler.SetCommand(Key.A, new MoveLeftCommand(false, game));
+            InputHandler.SetCommand(Key.S, new MoveDownCommand(false, game));
+            InputHandler.SetCommand(Key.D, new MoveRightCommand(false, game));
 
-            _game.Start();
+            game.Start();
         }
-        public void SetCurrentPlayer(PlayerPixel player, WeaponType weaponType)
+        private void SetCurrentPlayer(PlayerPixel player, WeaponType weaponType, IMediator mediator)
         {
-            var _socketService = SocketService.GetInstance();
             currentPlayer = player;
             switch (weaponType)
             {
                 case WeaponType.PISTOL:
                     {
-                        currentPlayer.SetShootingAlgorithm(new Pistol(_socketService));
+                        currentPlayer.SetShootingAlgorithm(new Pistol(mediator));
                         break;
                     }
                 case WeaponType.ROCKET:
                     {
-                        currentPlayer.SetShootingAlgorithm(new Rocket(_socketService));
+                        currentPlayer.SetShootingAlgorithm(new Rocket(mediator));
                         break;
                     }
                 case WeaponType.SNIPER:
                     {
-                        currentPlayer.SetShootingAlgorithm(new Sniper(_socketService));
+                        currentPlayer.SetShootingAlgorithm(new Sniper(mediator));
                         break;
                     }
                 case WeaponType.CANNON:
                     {
-                        currentPlayer.SetShootingAlgorithm(new Cannon(_socketService));
+                        currentPlayer.SetShootingAlgorithm(new Cannon(mediator));
                         break;
                     }
                 default:
                     {
-                        currentPlayer.SetShootingAlgorithm(new Pistol(_socketService));
+                        currentPlayer.SetShootingAlgorithm(new Pistol(mediator));
                         break;
                     }
             }

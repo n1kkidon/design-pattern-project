@@ -1,17 +1,21 @@
 ﻿using game_client.Socket;
 using shared;
 using System.Threading.Tasks;
+using game_client.Mediator;
 
 namespace game_client.Models;
 
 public class Rocket: ShootAlgorithm
 {
-    public Rocket(SocketService service) : base(service) { }
+    public Rocket(IMediator mediator = null) : base(mediator)
+    {
+    }
 
     public override async Task Shoot(IVector2 position)
     {
-        socketService.setWeaponProjectiles(WeaponType.ROCKET);
-        await socketService.OnCurrentPlayerShoot(position, WeaponType.ROCKET);
+        var args = new ProjectileShootArgs(position.ToVector2(), WeaponType.ROCKET);
+        await Mediator.Notify(this, "OnCurrentPlayerShoot", args);
+        //await socketService.OnCurrentPlayerShoot(position, WeaponType.ROCKET);
     }
 }
 

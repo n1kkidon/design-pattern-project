@@ -1,17 +1,21 @@
 ﻿using game_client.Socket;
 using shared;
 using System.Threading.Tasks;
+using game_client.Mediator;
 
 namespace game_client.Models;
 
 public class Cannon: ShootAlgorithm
 {
-    public Cannon(SocketService service) : base(service) { }
+    public Cannon(IMediator mediator = null) : base(mediator)
+    {
+    }
 
     public override async Task Shoot(IVector2 position)
     {
-        socketService.setWeaponProjectiles(WeaponType.CANNON);
-        await socketService.OnCurrentPlayerShoot(position, WeaponType.CANNON);
+        var args = new ProjectileShootArgs(position.ToVector2(), WeaponType.CANNON);
+        await Mediator.Notify(this, "OnCurrentPlayerShoot", args);
+        //await socketService.OnCurrentPlayerShoot(position, WeaponType.CANNON);
     }
 }
 

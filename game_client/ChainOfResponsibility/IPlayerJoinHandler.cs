@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace game_client.ChainOfResponsability
+namespace game_client.ChainOfResponsibility
 {
     public interface IPlayerJoinHandler
     {
-        void SetNext(IPlayerJoinHandler handler);
+        IPlayerJoinHandler SetNext(IPlayerJoinHandler handler);
         void Handle(PlayerJoinRequest request);
     }
 }

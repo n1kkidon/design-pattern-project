@@ -1,17 +1,21 @@
 ﻿using game_client.Socket;
 using shared;
 using System.Threading.Tasks;
+using game_client.Mediator;
 
 namespace game_client.Models;
 
 public class Sniper: ShootAlgorithm
 {
-    public Sniper(SocketService service) : base(service) { }
+    public Sniper(IMediator mediator = null) : base(mediator)
+    {
+    }
 
     public override async Task Shoot(IVector2 position)
     {
-        socketService.setWeaponProjectiles(WeaponType.SNIPER);
-        await socketService.OnCurrentPlayerShoot(position, WeaponType.SNIPER);
+        var args = new ProjectileShootArgs(position.ToVector2(), WeaponType.SNIPER);
+        await Mediator.Notify(this, "OnCurrentPlayerShoot", args);
+        //await socketService.OnCurrentPlayerShoot(position, WeaponType.SNIPER);
     }
 }
 

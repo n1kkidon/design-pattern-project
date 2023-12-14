@@ -5,8 +5,7 @@ using Avalonia.Interactivity;
 using game_client.Models;
 using shared;
 using System;
-using game_client.Models.CanvasItems;
-using game_client.Socket;
+
 
 namespace game_client.Views;
 
@@ -19,27 +18,19 @@ public partial class MainWindow : Window
         return _instance;
     }
     private readonly GameFacade _gameFacade;
-    private WeaponType _weaponType;
     private bool gameStarted;
 
     public MainWindow()
     {
         InitializeComponent();
         _gameFacade = new GameFacade(this);
-        var socketService = SocketService.GetInstance();
-        socketService.OnPlayerCreated += HandlePlayerCreated;
         gameStarted = false;
     }
 
     private void OnJoinButtonClick(object sender, RoutedEventArgs e)
     {
         var name = nameField.Text;
-        _gameFacade.JoinAndStartGame(name, _weaponType);
-        weaponSelectionPanel.IsVisible = false;
-        if (string.IsNullOrEmpty(name))
-            return;
-        canvas.Children.Remove(joinButton);
-        canvas.Children.Remove(nameField);
+        _gameFacade.JoinAndStartGame(name);
         gameStarted = true;
     }
 
@@ -47,14 +38,12 @@ public partial class MainWindow : Window
     {
         if(!gameStarted)
             return;
+        
         var clickPos = e.GetPosition(canvas);
         var pnt = new Point((int)clickPos.X, (int)clickPos.Y);
         var pointAdapter = new PointAdapter(pnt);
+        
         _gameFacade.SendShootingCords(pointAdapter);
-    }
-    private void HandlePlayerCreated(PlayerPixel player)
-    {
-        _gameFacade.SetCurrentPlayer(player, _weaponType);
     }
     protected override void OnKeyDown(KeyEventArgs e)
     {
@@ -65,7 +54,7 @@ public partial class MainWindow : Window
     {
         if (sender is RadioButton radioButton && radioButton.IsChecked == true)
         {
-            _weaponType = Enum.Parse<WeaponType>(radioButton.Content.ToString(), true);
+            _gameFacade.WeaponType = Enum.Parse<WeaponType>(radioButton.Content.ToString(), true);
         }
     }
 

@@ -1,10 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using game_client.Mediator;
 
 namespace game_client.Models;
 
-public abstract class GameBase
+public abstract class GameBase : BaseComponent
 {
     public const int TicksPerSecond = 60;
     private readonly DispatcherTimer _timer = new() { Interval = new TimeSpan(0, 0, 0, 0, 1000 / TicksPerSecond) };

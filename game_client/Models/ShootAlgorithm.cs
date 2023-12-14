@@ -4,17 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using game_client.Mediator;
 using shared;
 
 namespace game_client.Models;
 
-public abstract class ShootAlgorithm
+public abstract class ShootAlgorithm : BaseComponent
 {
-    protected SocketService socketService;
-
-    protected ShootAlgorithm(SocketService service)
+    protected ShootAlgorithm(IMediator mediator = null) : base(mediator)
     {
-        socketService = service;
     }
 
     public abstract Task Shoot(IVector2 position);

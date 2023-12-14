@@ -52,5 +52,9 @@
 		</Canvas>
 
         
-        
+        <Window.Styles>
+            <Style Selector="RadioButton:pointerover /template/ ContentPresenter">
+                <Setter Property="Foreground" Value="Orange"/>  
+            </Style>
+        </Window.Styles>
 </Window>

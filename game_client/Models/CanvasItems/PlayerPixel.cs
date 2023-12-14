@@ -6,7 +6,6 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using game_client.Models.PlayerState;
 using game_client.Observer;
-using game_client.Socket;
 using shared;
 
 namespace game_client.Models.CanvasItems;
@@ -17,16 +16,13 @@ public class PlayerPixel : GameObject, ISubject
     private readonly TextBlock NameTag;
     private readonly Image PlayerAvatar; 
     private readonly Rectangle HealthBar;
-    public ShootAlgorithm ShootAlgorithm { get; private set; }
-
-    private readonly SocketService _socketService = SocketService.GetInstance();
+    public ShootAlgorithm? ShootAlgorithm { get; private set; }
 
     private int health;
 
     //TODO: remove colors
     public PlayerPixel(string name, Color color, Vector2 location, int health) : base(location)
-    {
-        ShootAlgorithm = new Pistol(_socketService);
+    { 
         this.health = health;
         NameTag = new()
         {
