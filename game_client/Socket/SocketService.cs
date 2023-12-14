@@ -186,7 +186,8 @@ public class SocketService : BaseComponent
                     }
                 case "SNIPER":
                     {
-                        projectileForAll = director.Construct(builder, new Vector2(0, 0), Colors.Red, 6, 6);
+                        var sniperCreator = new SniperProjectileCreation();
+                        projectileForAll = sniperCreator.CreateProjectile(new Vector2(0, 0));
                         break;
                     }
                 case "ROCKET":
