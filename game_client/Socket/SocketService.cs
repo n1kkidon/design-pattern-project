@@ -37,7 +37,7 @@ public class SocketService : BaseComponent
         .Build();   
         socket.On("AddEntityToLobbyClient", (CanvasObjectInfo p) => AddEntityToLobbyClient(p));
         socket.On("UpdateEntityPositionInClient", (Vector2 d, string uuid) => UpdateEntityPositionInClient(d, uuid));
-        socket.On("UpdateEntityHealthInClient", (int hpAmount, string uuid, string eUuid) => UpdateEntityHealthInClient(hpAmount, uuid, eUuid));
+        socket.On("UpdateHealthInClient", (int hpAmount, string uuid, string eUuid) => UpdateEntityHealthInClient(hpAmount, uuid, eUuid));
         socket.On("RemoveObjectFromCanvas", (string uuid) => RemoveObjectFromCanvas(uuid));
         socket.On("UpdateOnProjectileInClient", (Vector2 direction, Vector2 initialPosition, string weaponType) => UpdateOnProjectileInClient(direction, initialPosition, weaponType));
         socket.On("UpdateCoinCounter", (int count) => Mediator.Notify(this, "UpdateCoinCounter", count));
@@ -174,24 +174,7 @@ public class SocketService : BaseComponent
             }
         });
     }
-
-    private async void UpdateHealthInClient(int amount, string playerUuid, string enemyUuid)
-    {
-        await UpdatePlayerHealthInClient(amount, playerUuid);
-        await UpdateEnemyHealthInClient(amount, enemyUuid);
-    }
-    private async Task UpdateEnemyHealthInClient(int amount, string enemyUuid)
-    {
-    await Dispatcher.UIThread.InvokeAsync(() =>
-    {
-        if (CurrentCanvasObjects.TryGetValue(enemyUuid, out var enemyObject) &&
-            enemyObject is EnemyPixel enemyPixel)
-        {
-            IHealthUpdateVisitor healthVisitor = new HealthUpdateVisitor();
-            enemyPixel.Accept(healthVisitor, amount);
-        }
-    });
-    }
+    
     private async Task UpdatePlayerHealthInClient(int amount, string playerUuid)
     {
     await Dispatcher.UIThread.InvokeAsync(() =>
