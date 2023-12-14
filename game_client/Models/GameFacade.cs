@@ -3,6 +3,7 @@ using game_client.Socket;
 using game_client.Views;
 using System;
 using Avalonia.Input;
+using Avalonia.Threading;
 using shared;
 using game_client.ChainOfResponsibility;
 using game_client.Mediator;
@@ -23,9 +24,10 @@ namespace game_client.Models
             SetupJoinChain();
         }
 
-        private void HandlePlayerCreated(PlayerPixel player, IMediator mediator)
+        private void HandlePlayerCreated(PlayerPixel player, IMediator mediator, int coinCount)
         {
             SetCurrentPlayer(player, WeaponType, mediator);
+            UpdateCoinCounter(coinCount);
         }
         
         private void SetupJoinChain()
@@ -52,9 +54,6 @@ namespace game_client.Models
             var mediator = new ConcreteMediator(socketService, game, _mainWindow);
                 
             socketService.OnPlayerCreated += HandlePlayerCreated;
-            // Reset the coin count and update the coin counter
-            socketService.ResetCoinCount();
-            //_socketService.UpdateCoinCounter();
 
             // Generate a random color
             Random rnd = new Random();
@@ -118,6 +117,15 @@ namespace game_client.Models
         public void SendShootingCords(IVector2 position)
         {
             currentPlayer.Shoot(position);
+        }
+        
+        public void UpdateCoinCounter(int count)
+        {
+            // Update the UI with the current coin count
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                _mainWindow.coinCounter.Text = $"Coins: {count}";
+            });
         }
     }
 }

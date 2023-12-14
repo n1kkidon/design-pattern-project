@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using game_client.Models;
 using game_client.Socket;
 using game_client.Views;
@@ -11,14 +12,14 @@ public class ConcreteMediator : IMediator
 {
     private readonly SocketService _socketService;
     private readonly Game _game;
-    //private readonly MainWindow _mainWindow;
+    private readonly MainWindow _mainWindow;
 
     public ConcreteMediator(SocketService socketService, Game game, MainWindow mainWindow)
     {
         _socketService = socketService;
         _game = game;
         
-        //_mainWindow = mainWindow;
+        _mainWindow = mainWindow;
         _socketService.SetMediator(this);
         _game.SetMediator(this);
     }
@@ -37,6 +38,15 @@ public class ConcreteMediator : IMediator
                 case "UnsubscribeFromGame_OnTick":
                     if(args != null)
                         _game.OnTick -= (Action)args;
+                    break;
+                case "UpdateCoinCounter":
+                    if (args != null)
+                    {
+                        Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            _mainWindow.coinCounter.Text = $"Coins: {(int)args}";
+                        });
+                    }
                     break;
             }
         }

@@ -60,6 +60,7 @@ public class PlayerHub : Hub
         var uuid = entityType == EntityType.PLAYER ? Context.ConnectionId : Guid.NewGuid().ToString();
         Vector2 location;
         int health = Constants.PlayerHealth;
+        int coinCount = 0;
 
         if (entityType == EntityType.PLAYER && PlayerStates.TryGetValue(name, out var savedState))
         {
@@ -68,6 +69,7 @@ public class PlayerHub : Hub
             originator.RestoreFromMemento(savedState);
             location = originator.Location;
             health = originator.Health;
+            coinCount = originator.CoinCount;
             // Restore other properties if needed
         }
         else
@@ -84,7 +86,8 @@ public class PlayerHub : Hub
             Uuid = uuid,
             Location = location,
             WeaponType = weaponType,
-            Health = health
+            Health = health,
+            CoinCount = coinCount
         };
 
         var freshJoined = CurrentCanvasItems.TryAdd(info.Uuid, info);
@@ -188,7 +191,8 @@ public class PlayerHub : Hub
             var originator = new PlayerOriginator
             {
                 Location = playerInfo.Location,
-                Health = playerInfo.Health
+                Health = playerInfo.Health,
+                CoinCount = playerInfo.CoinCount
                 // Add other properties to save if needed
             };
             PlayerStates[playerInfo.Name] = originator.SaveToMemento();
