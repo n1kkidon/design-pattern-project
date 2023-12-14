@@ -26,11 +26,8 @@ namespace game_client.Template
         // Abstract method for constructing the projectile. This needs to be implemented by subclasses.
         protected abstract Projectile ConstructProjectile(object materials, Vector2 position);
 
-        // Sealed method with final touches for the projectile construction.
-        // Subclasses should not override this method.
         protected virtual void FinalizeConstruction(Projectile projectile)
         {
-            // Subclasses may override if they need to extend this, but they cannot remove this behavior.
             projectile.setFinalized(true);
         }
     }
