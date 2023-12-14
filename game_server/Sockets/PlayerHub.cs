@@ -110,6 +110,7 @@ public class PlayerHub : Hub
     {
         var playerInfo = CurrentCanvasItems[Context.ConnectionId];
         
+        
         var x = 0f;
         var y = 0f;
         if(moveDirection.X > 0)
@@ -148,8 +149,9 @@ public class PlayerHub : Hub
                         await Clients.Caller.SendAsync("UpdateCoinCounter", playerInfo.CoinCount);
                         break;
                     case EntityType.ENEMY:
+                        var enemyUuid = iteratorObject.Key;
                         playerInfo.Health -= Constants.EnemyDamage; //TODO: Make this different for different enemies
-                        await Clients.All.SendAsync("UpdateEntityHealthInClient", Constants.EnemyDamage, Context.ConnectionId);
+                        await Clients.All.SendAsync("UpdateEntityHealthInClient", Constants.EnemyDamage, Context.ConnectionId, enemyUuid);
                         break;
                     case EntityType.OBSTACLE:
                         playerInfo.Location = oldLocation;

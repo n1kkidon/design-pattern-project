@@ -124,5 +124,9 @@ public class PlayerPixel : GameObject, ISubject
     {
         _currentState = newState;
     }
-
+    
+    public void Accept(IHealthUpdateVisitor visitor, int amount)
+    {
+        visitor.Visit(this, amount);
+    }
 }

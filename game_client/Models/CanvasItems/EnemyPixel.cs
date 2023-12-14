@@ -1,9 +1,11 @@
 using System;
 using Avalonia.Controls;
+using System.Collections.Generic;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Threading;
 using game_client.Composite;
+using game_client.Observer;
 using shared;
 
 namespace game_client.Models.CanvasItems;
@@ -12,9 +14,12 @@ public class EnemyPixel : GameObject, IGameComponent
     private TextBlock NameTag;
     protected Ellipse Pixel;
     private string _name;
+    private readonly Rectangle HealthBar;
     private int _size = 16;
-    public EnemyPixel(string name, Color color, Vector2 location, int health) : base(location){ //initial location 
+    private int health;
+    public EnemyPixel(string name, Color color, Vector2 location, int health) : base(location){ 
         _name = name;
+        this.health = health;
         NameTag = new(){
             Foreground = new SolidColorBrush(Colors.White),
             Text = name,
@@ -28,6 +33,51 @@ public class EnemyPixel : GameObject, IGameComponent
         };
         AddToStackPanel(Pixel);
         AddToStackPanel(NameTag, true);
+
+        HealthBar = new()
+        {
+            Width = 30,
+            Height = 10,
+            Fill = Brushes.Green,
+        };
+        AddToStackPanel(HealthBar, true);
+
+        new EnemyHealthBarObserver(this, HealthBar).Update(health);
+        
+    }
+
+        private readonly List<IObserver> observers = new List<IObserver>();
+    public void RegisterObserver(IObserver observer)
+    {
+        observers.Add(observer);
+    }
+
+    public void RemoveObserver(IObserver observer)
+    {
+        observers.Remove(observer);
+    }
+
+    public void NotifyObservers()
+    {
+        foreach (var observer in observers)
+        {
+            observer.Update(health);
+        }
+    }
+
+    public void DecreaseHealth(int amount)
+    {
+        if (health - amount >= 0)
+        {
+            health-=amount;
+        }
+        else
+        {
+            health = 0;
+            Console.WriteLine("DEAD"); //TODO: make him actually dead
+        }
+            
+        NotifyObservers();
     }
 
     public void Operation()
@@ -87,5 +137,10 @@ public class EnemyPixel : GameObject, IGameComponent
             }
             Pixel.InvalidateVisual();
         });
+    }
+
+    public void Accept(IHealthUpdateVisitor visitor, int amount)
+    {
+        visitor.Visit(this, amount);
     }
 }
