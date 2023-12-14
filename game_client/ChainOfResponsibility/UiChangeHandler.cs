@@ -14,7 +14,7 @@ public class UiChangeHandler: BaseHandler
         _mainWindow.weaponSelectionPanel.IsVisible = false;
         _mainWindow.canvas.Children.Remove(_mainWindow.joinButton);
         _mainWindow.canvas.Children.Remove(_mainWindow.nameField);
-        
+        _mainWindow.GameStarted = true;
         NextHandler?.Handle(request);
     }
 }

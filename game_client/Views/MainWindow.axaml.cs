@@ -18,25 +18,24 @@ public partial class MainWindow : Window
         return _instance;
     }
     private readonly GameFacade _gameFacade;
-    private bool gameStarted;
+    public bool GameStarted;
 
     public MainWindow()
     {
         InitializeComponent();
         _gameFacade = new GameFacade(this);
-        gameStarted = false;
+        GameStarted = false;
     }
 
     private void OnJoinButtonClick(object sender, RoutedEventArgs e)
     {
         var name = nameField.Text;
         _gameFacade.JoinAndStartGame(name);
-        gameStarted = true;
     }
 
     private void OnMouseClick(object sender, PointerPressedEventArgs e)
     {
-        if(!gameStarted)
+        if(!GameStarted)
             return;
         
         var clickPos = e.GetPosition(canvas);
